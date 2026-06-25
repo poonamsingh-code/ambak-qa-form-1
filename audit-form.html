@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ambak — FBM Call Audit Form</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#15212e;
+    --ink-soft:#3a4a5a;
+    --muted:#6b7c8d;
+    --line:#e3e9ee;
+    --line-strong:#d2dbe2;
+    --paper:#eef2f5;
+    --card:#ffffff;
+    --teal:#4a3b9c;          /* Ambak purple (brand accent) */
+    --teal-deep:#382c7d;
+    --teal-tint:#ece9f7;
+    --yes:#3b8f63;
+    --yes-bg:#e8f4ec;
+    --no:#c0473b;
+    --no-bg:#fbeae8;
+    --partial:#b5790a;
+    --partial-bg:#fbf1de;
+    --na:#64748b;
+    --na-bg:#eef1f4;
+    --ring:#4a3b9c;
+    --shadow:0 1px 2px rgba(21,33,46,.05),0 6px 20px rgba(21,33,46,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:980px;margin:0 auto;padding:0 18px 120px}
+
+  /* ---------- Header ---------- */
+  header.masthead{
+    background:linear-gradient(135deg,var(--teal-deep),var(--teal));
+    color:#fff;border-radius:0 0 22px 22px;
+    padding:30px 26px 28px;margin-bottom:22px;
+    box-shadow:var(--shadow);
+  }
+  .masthead .eyebrow{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:.18em;
+    text-transform:uppercase;font-size:11px;opacity:.8;margin:0 0 8px;
+  }
+  .masthead h1{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(22px,4vw,30px);
+    margin:0;letter-spacing:-.01em;
+  }
+  .masthead p.sub{margin:8px 0 0;font-size:14px;opacity:.85;max-width:60ch}
+  .masthead .bar{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}
+  .logo{display:flex;align-items:center;gap:10px;flex-shrink:0;padding-top:4px}
+  .logo svg{width:24px;height:31px;display:block}
+  .logo .word{font-family:'Space Grotesk',sans-serif;font-weight:700;
+    letter-spacing:.16em;font-size:19px;color:#fff}
+
+  /* ---------- Call Details card ---------- */
+  .call-details{background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:20px 22px;margin:0 0 18px;box-shadow:var(--shadow)}
+  .call-details h3{display:flex;align-items:center;gap:10px;margin:0 0 18px;
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+  .call-details .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);flex-shrink:0}
+  .cd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:16px}
+  .cd-grid label{display:flex;flex-direction:column;gap:7px;font-size:10.5px;font-weight:600;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .cd-grid input,.cd-grid select{border:1px solid var(--line-strong);border-radius:10px;
+    padding:11px 12px;font-size:14px;font-family:inherit;color:var(--ink);background:#fff;width:100%}
+  .cd-grid input::placeholder{color:#aab4bf}
+  .cd-grid input:focus,.cd-grid select:focus{outline:2px solid var(--teal);outline-offset:0;border-color:var(--teal)}
+  .cd-grid select:disabled{background:#f4f6f8;color:#aab4bf;cursor:not-allowed}
+
+  /* ---------- Meta fields ---------- */
+  .meta{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;
+    margin-top:20px;
+  }
+  .meta label{display:flex;flex-direction:column;gap:6px;font-size:11px;
+    font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.85}
+  .meta input{
+    border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);
+    color:#fff;border-radius:9px;padding:9px 11px;font-size:14px;font-family:inherit;
+  }
+  .meta input::placeholder{color:rgba(255,255,255,.6)}
+  .meta input:focus{outline:2px solid #fff;outline-offset:1px;background:rgba(255,255,255,.18)}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:flex;gap:8px;margin:0 0 18px;position:sticky;top:0;z-index:30;
+    background:var(--paper);padding:14px 0 10px}
+  .tab{
+    flex:1;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;
+    padding:13px 12px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--ink-soft);border-radius:12px;cursor:pointer;transition:.15s;
+    display:flex;align-items:center;justify-content:center;gap:9px;
+  }
+  .tab .pill{font-size:11px;background:var(--na-bg);color:var(--muted);
+    border-radius:20px;padding:2px 9px;font-family:'Inter';font-weight:600}
+  .tab[aria-selected="true"]{
+    background:var(--ink);color:#fff;border-color:var(--ink);
+  }
+  .tab[aria-selected="true"] .pill{background:rgba(255,255,255,.2);color:#fff}
+
+  /* ---------- Category groups ---------- */
+  .cat{margin-bottom:18px}
+  .cat-head{
+    display:flex;align-items:center;gap:12px;margin:26px 4px 12px;
+  }
+  .cat-head .idx{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;
+    color:#fff;background:var(--teal);width:30px;height:30px;border-radius:9px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .cat-head h2{font-family:'Space Grotesk',sans-serif;font-weight:600;
+    font-size:17px;margin:0;letter-spacing:-.01em}
+  .cat-head .count{font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap}
+
+  /* ---------- Question rows ---------- */
+  .row{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;margin-bottom:10px;box-shadow:var(--shadow);transition:.15s;
+  }
+  .row.answered{border-color:var(--teal);}
+  .row-top{display:flex;align-items:flex-start;gap:10px}
+  .param{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;
+    color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  }
+  .qtext{font-size:13.5px;color:var(--ink-soft);margin:5px 0 13px}
+
+  /* info icon + tooltip */
+  .info{
+    position:relative;flex-shrink:0;width:19px;height:19px;border-radius:50%;
+    border:1.5px solid var(--teal);color:var(--teal);font-size:11px;font-weight:700;
+    display:inline-flex;align-items:center;justify-content:center;cursor:help;
+    font-family:'Space Grotesk',sans-serif;user-select:none;
+  }
+  .info:hover,.info.open{background:var(--teal);color:#fff}
+  .tip{
+    position:absolute;top:calc(100% + 9px);left:50%;transform:translateX(-50%);
+    width:min(340px,78vw);background:var(--ink);color:#f3f7fa;font-family:'Inter';
+    font-weight:400;font-size:12.5px;line-height:1.55;padding:12px 14px;border-radius:11px;
+    box-shadow:0 10px 34px rgba(21,33,46,.28);z-index:50;
+    opacity:0;visibility:hidden;transition:.14s;pointer-events:none;
+    text-align:left;white-space:pre-line;
+  }
+  .tip::before{content:"";position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+    border:7px solid transparent;border-bottom-color:var(--ink)}
+  .tip .tip-label{display:block;font-family:'Space Grotesk';font-weight:600;
+    font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#7fd6c7;margin-bottom:5px}
+  .info:hover .tip,.info.open .tip{opacity:1;visibility:visible}
+
+  /* options */
+  .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .opt{position:relative}
+  .opt input{position:absolute;opacity:0;width:0;height:0}
+  .opt span{
+    display:inline-block;padding:7px 15px;border-radius:9px;font-size:13px;font-weight:600;
+    border:1.5px solid var(--line-strong);background:#fbfcfd;color:var(--ink-soft);cursor:pointer;
+    transition:.12s;
+  }
+  .opt span:hover{border-color:var(--muted)}
+  .opt input:focus-visible + span{outline:2px solid var(--ink);outline-offset:2px}
+  .opt input:checked + span.v-yes{background:var(--yes-bg);border-color:var(--yes);color:var(--yes)}
+  .opt input:checked + span.v-no{background:var(--no-bg);border-color:var(--no);color:var(--no)}
+  .opt input:checked + span.v-partial{background:var(--partial-bg);border-color:var(--partial);color:var(--partial)}
+  .opt input:checked + span.v-na{background:var(--na-bg);border-color:var(--na);color:var(--na)}
+
+  /* remark */
+  .note-toggle{background:none;border:none;color:var(--teal);font-size:12px;font-weight:600;
+    cursor:pointer;padding:4px 0;margin-top:10px;font-family:'Inter'}
+  .note-toggle:hover{text-decoration:underline}
+  .note{display:none;margin-top:8px}
+  .note.show{display:block}
+  .note textarea{width:100%;border:1px solid var(--line-strong);border-radius:9px;
+    padding:9px 11px;font-family:inherit;font-size:13px;resize:vertical;min-height:46px;color:var(--ink)}
+  .note textarea:focus{outline:2px solid var(--teal);outline-offset:0;border-color:var(--teal)}
+
+  /* ---------- Sticky scorecard ---------- */
+  .scorebar{
+    position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:var(--card);border-top:1px solid var(--line-strong);
+    box-shadow:0 -6px 24px rgba(21,33,46,.08);
+  }
+  .scorebar .inner{max-width:980px;margin:0 auto;padding:12px 18px;
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .ring{position:relative;width:46px;height:46px;flex-shrink:0}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk';font-weight:700;font-size:12px;color:var(--ink)}
+  .tally{display:flex;gap:8px;flex-wrap:wrap;flex:1;min-width:180px}
+  .chip{font-size:12px;font-weight:600;padding:5px 11px;border-radius:20px;display:flex;gap:6px}
+  .chip b{font-family:'Space Grotesk'}
+  .chip.yes{background:var(--yes-bg);color:var(--yes)}
+  .chip.no{background:var(--no-bg);color:var(--no)}
+  .chip.partial{background:var(--partial-bg);color:var(--partial)}
+  .chip.na{background:var(--na-bg);color:var(--na)}
+  .actions{display:flex;gap:8px}
+  .btn{font-family:'Space Grotesk';font-weight:600;font-size:13px;border-radius:10px;
+    padding:9px 15px;cursor:pointer;border:1.5px solid var(--ink);background:var(--card);color:var(--ink);transition:.12s}
+  .btn:hover{background:var(--ink);color:#fff}
+  .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+  .btn.primary:hover{background:var(--teal-deep);border-color:var(--teal-deep)}
+  .btn:disabled{opacity:.6;cursor:wait}
+
+  .toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%) translateY(12px);
+    background:var(--ink);color:#fff;padding:12px 18px;border-radius:11px;font-size:13.5px;
+    font-weight:600;box-shadow:0 12px 34px rgba(21,33,46,.32);opacity:0;visibility:hidden;
+    transition:.2s;z-index:60;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+  .toast.ok{background:#1f7a4d}
+  .toast.err{background:#b23b30}
+
+  @media(max-width:560px){
+    .masthead{padding:24px 18px}
+    .row{padding:14px}
+    .scorebar .inner{gap:10px}
+    .actions{width:100%}
+    .btn{flex:1}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap" style="padding:0">
+    <div class="bar">
+      <div>
+        <p class="eyebrow">Quality Audit · Home Loan</p>
+        <h1>FBM Call Audit Form</h1>
+        <p class="sub">Score each parameter against the call. Hover the <strong>&#9432;</strong> on any row to see the guidance and example script from the rubric.</p>
+      </div>
+      <div class="logo" aria-label="Ambak">
+        <svg viewBox="0 0 40 52" aria-hidden="true">
+          <path d="M20 3 L34 43 L20 34 L6 43 Z" fill="#ffffff"/>
+          <circle cx="20" cy="49" r="2.7" fill="#ffffff"/>
+        </svg>
+        <span class="word">AMBAK</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="call-details">
+    <h3><span class="dot"></span>Call Details</h3>
+    <div class="cd-grid">
+      <label>QA Name (Team Lead)
+        <select id="cd_qa"><option value="">— select QA —</option></select></label>
+      <label>Manager (L1)
+        <select id="cd_mgr"><option value="">— select manager —</option></select></label>
+      <label>Agent Name
+        <select id="cd_agent"><option value="">— select agent —</option></select></label>
+      <label>Lead ID
+        <input type="text" id="cd_lead" placeholder="e.g. 190140"></label>
+      <label>Call Date &amp; Time
+        <input type="datetime-local" id="cd_calldt"></label>
+      <label>Audit Date
+        <input type="date" id="cd_auditdate"></label>
+      <label>Call Duration
+        <input type="text" id="cd_duration" placeholder="e.g. 5:32 or 332 sec"></label>
+    </div>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-part="A">Part A <span class="pill" id="pillA"></span></button>
+    <button class="tab" role="tab" aria-selected="false" data-part="B">Part B <span class="pill" id="pillB"></span></button>
+  </div>
+
+  <div id="formArea"></div>
+</div>
+
+<div class="scorebar">
+  <div class="inner">
+    <div class="ring">
+      <svg width="46" height="46"><circle cx="23" cy="23" r="19" fill="none" stroke="#e3e9ee" stroke-width="5"/>
+        <circle id="ringFill" cx="23" cy="23" r="19" fill="none" stroke="var(--teal)" stroke-width="5"
+          stroke-linecap="round" stroke-dasharray="119.4" stroke-dashoffset="119.4"/></svg>
+      <span class="pct" id="ringPct">0%</span>
+    </div>
+    <div class="tally">
+      <span class="chip yes">Yes <b id="t_yes">0</b></span>
+      <span class="chip no">No <b id="t_no">0</b></span>
+      <span class="chip partial">Partial <b id="t_partial">0</b></span>
+      <span class="chip na">NA <b id="t_na">0</b></span>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="window.print()">Print</button>
+      <button class="btn" id="exportBtn">Download CSV</button>
+      <button class="btn primary" id="submitBtn">Submit to Google</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- Data extracted from the audit rubric sheet ---------- */
+const YN  = ["Yes","No","NA"];
+const YNP = ["Yes","No","Partial","NA"];
+
+const DATA = {
+  A: [
+    {cat:"Call Opening", param:"Greetings the customer", q:"Did FBM greet the customer?", opts:YN, exp:"Good Morning / Good Evening / Namaskar.\nYes: \u201CGood morning Rohit ji\u201D — start the call with this line."},
+    {cat:"Call Opening", param:"Customer name mentioned", q:"Did FBM address the customer with their name?", opts:YN, exp:"Yes: \u201CGood morning Rohit ji\u201D (uses the customer's name).\nNo: Did not use the customer's name."},
+    {cat:"Call Opening", param:"Self Intro", q:"Did FBM introduce themselves on the call?", opts:YN, exp:"\u201CI am Sunny, your Home Loan advisor from Ambak.\u201D"},
+    {cat:"Call Opening", param:"Ambak brand mention", q:"Did FBM introduce Ambak?", opts:YN, exp:"\u201CAmbak is the new-age home loan marketplace to help you with your home loan needs.\u201D"},
+    {cat:"Call Opening", param:"Lead source mention (if available)", q:"Did FBM make the right handshake / make the customer comfortable about why they're getting a call from Ambak?", opts:YN, exp:"Confirm the source of lead — partner's name / website name.\nYes: \u201CAs I can see you were checking home loans on our website\u201D or \u201CI received your details from our partner.\u201D\nNo: Did not mention at all."},
+
+    {cat:"Profiling (Loan / Property / Persona)", param:"Loan Type — HL / LAP / BT", q:"Did FBM confirm which type of loan it is (HL / LAP / BT)?", opts:YN, exp:"Ask the loan type: HL or LAP.\nYes: \u201CAre you looking for a Home Loan or Loan Against Property?\u201D\nNo: Did not ask at all."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Loan Amount Required", q:"Did FBM confirm how much loan amount is required?", opts:YN, exp:"Yes: \u201CMay I know how much loan amount you require?\u201D\nNo: Did not ask at all."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Tenure preference", q:"Did FBM ask for the desired loan tenure?", opts:YN, exp:"Confirm the tenure required.\nYes: \u201CFor how long do you need the home loan — 10, 15 or 25 years?\u201D\nNo: Did not confirm at all."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Token Amount Paid status", q:"Did FBM ask if the customer has paid a token amount?", opts:YN, exp:"Ask whether the customer has paid the token amount and got the agreement done.\nYes: \u201CHave you paid the token amount, and how much? And do you have the agreement letter (ATS/BBA/Provisional allotment letter)?\u201D\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Token amount Paid", q:"Did FBM ask how much token amount was paid?", opts:YN, exp:"Yes: \u201CHow much amount have you paid, sir?\u201D\nNo: Did not ask at all."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Agreement letter status", q:"Did FBM ask for the agreement letter (ATS / BBA / Provisional Allotment letter — whichever applies)?", opts:YN, exp:"Ask if the customer has received the ATS from the seller."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Location of the property / Project", q:"Did FBM confirm the property location, project name and pincode?", opts:YN, exp:"Yes: \u201CCould you please tell me the property location, project name and pincode?\u201D\nNo: Did not ask at all."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Ready to move / Under construction", q:"Did FBM confirm whether the property is ready to move or under construction?", opts:YN, exp:"Ask if the property is ready to move or under construction."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Market Value", q:"Did FBM confirm the market value?", opts:YN, exp:"Ask the market and agreement value.\nComplete: asked market value and agreement value (amount decided for registration).\nSemi: asked only one of the two.\nNo: asked neither."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Agreement value", q:"Did FBM confirm the agreement value (amount mentioned during property registry)?", opts:YN, exp:"Ask the agreement value — this value is declared during property registration."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Profession", q:"Did FBM ask the customer's profession (salaried or self-employed)?", opts:YN, exp:"Does the customer have a job or own a business, and for how long.\nComplete: \u201CAre you a salaried person or self-employed?\u201D\nSemi: asked profession but forgot tenure.\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Profession Tenure", q:"Did FBM confirm tenure in the company / business?", opts:YN, exp:"How many years in the current job or business."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Salaried Income: In-hand Salary", q:"Did FBM confirm the in-hand salary per month?", opts:YN, exp:"Salaried: in-hand take-home and gross salary per month.\nComplete: asked in-hand AND gross.\nSemi: asked only in-hand.\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Salaried Income: Gross Salary / month", q:"Did FBM confirm the gross salary per month?", opts:YN, exp:"Salaried: in-hand take-home and gross salary per month.\nComplete: asked in-hand AND gross.\nSemi: asked only in-hand.\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"SEP / SENP: ITR / Gross Annual Income", q:"Did FBM confirm the self-employed customer's gross annual income / income shown in ITR?", opts:YN, exp:"Self-employed: income shown in ITR or GST return.\nComplete: ITR and GST.\nSemi: only one.\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"New / Resale | Ready / Under construction", q:"Did FBM confirm whether the property is new or resale and ready-to-move or under construction?", opts:YN, exp:"Confirm DA / resale and ready-to-move / under construction.\nYes: \u201CIs this a direct allotment / new property or resale? And is it ready to move or under construction?\u201D\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Personal: Age", q:"Did FBM confirm the customer's age as per ID proof?", opts:YN, exp:"FBM needs age, current address pincode and marital status (also mobile & email if not in the lead).\nComplete: all three.\nSemi: any two.\nPartial: any one."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Personal: Current Address", q:"Did FBM confirm the customer's current address?", opts:YN, exp:"Ask where the customer is presently living — area name and pincode."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Personal: Marital Status", q:"Did FBM confirm the customer's marital status?", opts:YN, exp:"Ask if the customer is married or unmarried."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Obligation: Running loan / CC outstanding", q:"Did FBM check for any existing loan or credit card obligations?", opts:YN, exp:"Check for running loans and when they end.\nYes: \u201CDo you currently have any loan running or credit card outstanding?\u201D\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"CIBIL Score ask / Fetch", q:"Did FBM ask for or verify the customer's CIBIL score?", opts:YN, exp:"Ask or fetch the CIBIL score.\nYes: \u201CMay I know your CIBIL score, or let me check it for you?\u201D\nNo: Did not ask or verify."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Co-Applicant: Age (DOB)", q:"Did FBM confirm the co-applicant's age as per ID proof?", opts:YN, exp:"FBM needs to ask the date of birth as per Aadhaar & PAN card."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Co-Applicant: Current Address", q:"Did FBM confirm the co-applicant's current address?", opts:YN, exp:"Ask current city and pincode only — not the full address."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Co-Applicant: Marital Status", q:"Did FBM confirm the co-applicant's marital status?", opts:YN, exp:"Confirm whether the co-applicant is married or unmarried."},
+    {cat:"Profiling (Loan / Property / Persona)", param:"Co-Applicant: Running loan / CC outstanding", q:"Did FBM check for the co-applicant's existing loan or credit card obligations?", opts:YN, exp:"Check for running loans and when they end.\nYes: \u201CDo you currently have any loan running or credit card outstanding?\u201D\nNo: Did not ask."},
+
+    {cat:"Call Etiquette", param:"Personalization", q:"Did FBM personalize the conversation using the customer's name?", opts:YN, exp:"Use the customer's name 3\u20134 times through the call.\nYes: \u201CRohit ji, as I can see\u2026\u201D / \u201CRohit ji, I would like to inform you\u2026\u201D\nNo: using \u201CSir\u201D throughout."},
+    {cat:"Call Etiquette", param:"Tone / Pace / Intonation / Confidence", q:"Did FBM maintain a professional tone, pace and confidence?", opts:YN, exp:"Maintain positive tone, pace and confidence.\nYes: professional communication.\nNo: poor tone or low confidence."},
+    {cat:"Call Etiquette", param:"Attentiveness / Rude", q:"Did FBM remain attentive and courteous throughout?", opts:YN, exp:"Remain attentive and polite.\nYes: listened actively and was respectful.\nNo: sounded rude or distracted."},
+    {cat:"Call Etiquette", param:"Apology / Empathy", q:"Did FBM show empathy and apologize wherever required?", opts:YN, exp:"Show empathy and apologize where required.\nYes: acknowledged customer concern and apologised.\nNo: no empathy shown."},
+
+    {cat:"Pitch", param:"TAT", q:"Did FBM explain the expected turnaround time for each stage?", opts:YN, exp:"Inform expected timelines.\nYes: shared a realistic TAT — explained the stages and the time each stage takes.\nNo: Did not explain timelines."},
+
+    {cat:"Urgency", param:"Urgency Creation for documents", q:"Did FBM create enough urgency for the documents (e.g. delay may impact ROI / fees may increase / may miss exclusive lender offers)?", opts:YN, exp:"Create urgency for timely document submission and explain the impact of delays."},
+
+    {cat:"Closing", param:"Call back time asked", q:"Did FBM ask the customer's preferred call-back time?", opts:YN, exp:"Ask for a preferred callback time.\nYes: confirmed a convenient time.\nNo: Did not ask."},
+    {cat:"Closing", param:"Further Assistance", q:"Did FBM check whether the customer needed any further assistance?", opts:YN, exp:"Check if the customer needs further assistance.\nYes: offered additional support.\nNo: Did not ask."},
+    {cat:"Closing", param:"Call closing", q:"Did FBM close the call professionally?", opts:YN, exp:"Close the call professionally.\nYes: thanked the customer and ended politely.\nNo: abrupt closure."},
+
+    {cat:"Sangam", param:"Remarks updated", q:"Did FBM add elaborated remarks in Sangam?", opts:YN, exp:"Update remarks accurately in Sangam.\nYes: remarks updated.\nNo: remarks not updated."},
+    {cat:"Sangam", param:"Follow-ups set at preferred time", q:"Did FBM set the follow-up as per the customer's preferred time?", opts:YN, exp:"Set follow-up as per the customer's preferred time.\nYes: follow-up scheduled.\nNo: not set."},
+    {cat:"Sangam", param:"Document list shared", q:"Did FBM share the required document checklist (WhatsApp / email)?", opts:YN, exp:"Share the document checklist with the customer.\nYes: shared document list.\nNo: not shared."},
+    {cat:"Sangam", param:"Offer shared", q:"Did FBM share the available offers and lender options?", opts:YN, exp:"Share available offers and lender options.\nYes: offer shared.\nNo: offer not shared."},
+
+    {cat:"Fatal", param:"False commitment / Abusive / Against COC", q:"Did FBM avoid false commitments, abusive language and any Code-of-Conduct violation?", opts:YN, exp:"No false commitment, abusive language or COC violation.\nYes: no violation.\nNo: fatal error observed."}
+  ],
+
+  B: [
+    {cat:"Pitch", param:"Ambak USP (New HL platform / 75+ lenders / Compare & Suggest-BRE / Zero service charges / Dedicated support / Live tracking)", q:"Did FBM explain Ambak's key benefits and value proposition?", opts:YNP, exp:"Handle process objections such as why this document is required, why it's taking so much time, why the sanction letter is delayed, etc.\nYes: acknowledge the customer's concern (\u201CI apologise for this issue and completely understand your situation, let me help you to the best of my ability\u201D).\nNo: ignored or failed to handle the objection."},
+    {cat:"Pitch", param:"Objection Handling: Process", q:"Did FBM handle process objections (why a document is required, why it's taking time, why the sanction letter is delayed, etc.)?", opts:YNP, exp:"Handle product objections such as why ROI is so high, why the loan amount is less, why can't I get 90% funding, etc.\nYes: acknowledge the customer's concern (\u201CI apologise for this issue and completely understand your situation, let me help you to the best of my ability\u201D).\nNo: ignored or failed to handle the objection."},
+    {cat:"Pitch", param:"Objection Handling: Product", q:"Did FBM handle product objections (why ROI is high, why loan amount is less, why not 90% funding, etc.)?", opts:YNP, exp:"Handle behavioural objections such as being condescending with the customer, showing a negative attitude, reacting negatively when the customer points out an FBM mistake, etc.\nYes: acknowledge the customer's concern (\u201CI apologise for this issue and completely understand your situation, let me help you to the best of my ability\u201D).\nNo: ignored or failed to handle the objection."},
+    {cat:"Pitch", param:"Objection Handling: Behaviour", q:"Did FBM handle behavioural objections (being condescending, negative attitude, reacting badly when the customer points out a mistake, etc.)?", opts:YNP, exp:"Handle behavioural objections such as being condescending with the customer, showing a negative attitude, reacting negatively when the customer points out an FBM mistake, etc.\nYes: acknowledge the customer's concern (\u201CI apologise for this issue and completely understand your situation, let me help you to the best of my ability\u201D).\nNo: ignored or failed to handle the objection."},
+    {cat:"Pitch", param:"Further Process Explain (Application / CAM / FI / PD / Legal / Technical / Sanction / Disbursement)", q:"Did FBM explain the complete loan process from application to disbursement?", opts:YNP, exp:"Explain to the customer what happens once the case is logged in with the bank."},
+
+    {cat:"Documents", param:"Property", q:"Did FBM educate the customer on all property-related documents as per the DRE in Sangam?", opts:YNP, exp:"Customer-persona-wise document education / awareness (based on Sangam update)."},
+    {cat:"Documents", param:"Income", q:"Did FBM educate the customer on all income-related documents as per the DRE in Sangam?", opts:YNP, exp:"Customer-persona-wise document education / awareness (based on Sangam update)."},
+    {cat:"Documents", param:"KYC", q:"Did FBM educate the customer on all KYC-related documents as per the DRE in Sangam?", opts:YNP, exp:"Customer-persona-wise document education / awareness (based on Sangam update)."},
+    {cat:"Documents", param:"Objection handling — why docs are required", q:"Did FBM explain why the respective documents are required?", opts:YNP, exp:"Explain the complete process from application to disbursement.\nComplete: explained the key stages.\nNo: did not explain the process."},
+    {cat:"Documents", param:"Objection handling — document source", q:"Did FBM help the customer understand the source / how to access their documents to share?", opts:YNP, exp:"Explain the complete process from application to disbursement.\nComplete: explained the key stages.\nNo: did not explain the process."}
+  ]
+};
+
+/* ---------- Render ---------- */
+const responses = {};       // id -> value
+const notes = {};           // id -> text
+const formArea = document.getElementById('formArea');
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function buildPart(part){
+  const items = DATA[part];
+  const frag = document.createElement('div');
+  let lastCat = null, catWrap=null, catIndex=0;
+
+  items.forEach((it,i)=>{
+    const id = part + '_' + i;
+    if(it.cat !== lastCat){
+      catIndex++;
+      lastCat = it.cat;
+      const count = items.filter(x=>x.cat===it.cat).length;
+      catWrap = document.createElement('section');
+      catWrap.className='cat';
+      catWrap.innerHTML =
+        `<div class="cat-head">
+           <span class="idx">${catIndex}</span>
+           <h2>${esc(it.cat)}</h2>
+           <span class="count">${count} ${count>1?'parameters':'parameter'}</span>
+         </div>`;
+      frag.appendChild(catWrap);
+    }
+
+    const optsHtml = it.opts.map(o=>{
+      const cls = 'v-'+o.toLowerCase();
+      return `<label class="opt">
+        <input type="radio" name="${id}" value="${o}" onchange="pick('${id}','${o}')">
+        <span class="${cls}">${o}</span></label>`;
+    }).join('');
+
+    const tip = it.exp
+      ? `<span class="info" tabindex="0" onclick="this.classList.toggle('open')">i
+           <span class="tip"><span class="tip-label">Guidance</span>${esc(it.exp)}</span></span>`
+      : '';
+
+    const row = document.createElement('div');
+    row.className='row';
+    row.id='row_'+id;
+    row.innerHTML =
+      `<div class="row-top">
+         <div class="param">${esc(it.param)} ${tip}</div>
+       </div>
+       <div class="qtext">${esc(it.q)}</div>
+       <div class="opts">${optsHtml}</div>
+       <button class="note-toggle" onclick="toggleNote('${id}')">+ Add remark</button>
+       <div class="note" id="note_${id}">
+         <textarea placeholder="Optional comment for this parameter" oninput="notes['${id}']=this.value"></textarea>
+       </div>`;
+    catWrap.appendChild(row);
+  });
+  return frag;
+}
+
+function pick(id,val){
+  responses[id]=val;
+  document.getElementById('row_'+id).classList.add('answered');
+  updateScore();
+}
+function toggleNote(id){
+  document.getElementById('note_'+id).classList.toggle('show');
+}
+
+let currentPart='A';
+function showPart(part){
+  currentPart=part;
+  formArea.innerHTML='';
+  formArea.appendChild(buildPart(part));
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.setAttribute('aria-selected', t.dataset.part===part ? 'true':'false');
+  });
+  // restore selections
+  DATA[part].forEach((it,i)=>{
+    const id=part+'_'+i;
+    if(responses[id]){
+      const el=document.querySelector(`input[name="${id}"][value="${responses[id]}"]`);
+      if(el){el.checked=true;document.getElementById('row_'+id).classList.add('answered');}
+    }
+    if(notes[id]){
+      const ta=document.querySelector(`#note_${id} textarea`);
+      if(ta){ta.value=notes[id];document.getElementById('note_'+id).classList.add('show');}
+    }
+  });
+  updateScore();
+}
+
+function updateScore(){
+  const total = DATA.A.length + DATA.B.length;
+  let answered=0, t={Yes:0,No:0,Partial:0,NA:0};
+  Object.values(responses).forEach(v=>{answered++; t[v]=(t[v]||0)+1;});
+  document.getElementById('t_yes').textContent=t.Yes;
+  document.getElementById('t_no').textContent=t.No;
+  document.getElementById('t_partial').textContent=t.Partial;
+  document.getElementById('t_na').textContent=t.NA;
+  const pct = total? Math.round(answered/total*100):0;
+  document.getElementById('ringPct').textContent=pct+'%';
+  const C=2*Math.PI*19;
+  document.getElementById('ringFill').setAttribute('stroke-dashoffset', C*(1-answered/total));
+
+  // per-part progress pills
+  const aDone=DATA.A.filter((_,i)=>responses['A_'+i]).length;
+  const bDone=DATA.B.filter((_,i)=>responses['B_'+i]).length;
+  document.getElementById('pillA').textContent=aDone+'/'+DATA.A.length;
+  document.getElementById('pillB').textContent=bDone+'/'+DATA.B.length;
+}
+
+/* ---------- CSV export ---------- */
+function exportCSV(){
+  const meta=[
+    ['QA Name (Team Lead)', document.getElementById('cd_qa').value],
+    ['QA Email', selEmail(document.getElementById('cd_qa'))],
+    ['Agent Name', document.getElementById('cd_agent').value],
+    ['Agent Email', selEmail(document.getElementById('cd_agent'))],
+    ['Lead ID', document.getElementById('cd_lead').value],
+    ['Call Date & Time', document.getElementById('cd_calldt').value],
+    ['Audit Date', document.getElementById('cd_auditdate').value],
+    ['Call Duration', document.getElementById('cd_duration').value]
+  ];
+  const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  let rows=[['Section','Category','Parameter','Audit question','Response','Remark']];
+  ['A','B'].forEach(p=>{
+    DATA[p].forEach((it,i)=>{
+      const id=p+'_'+i;
+      rows.push(['Part '+p, it.cat, it.param, it.q, responses[id]||'', notes[id]||'']);
+    });
+  });
+  let csv=meta.map(m=>m.map(q).join(',')).join('\n')+'\n\n'+rows.map(r=>r.map(q).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  const ag=(document.getElementById('cd_agent').value||'Agent').replace(/\s+/g,'_');
+  a.href=URL.createObjectURL(blob);
+  a.download='Ambak_Audit_'+ag+'.csv';
+  a.click();
+}
+
+/* ---------- Submit to Google Sheet (via Apps Script Web App) ----------
+   1. Create a Google Sheet.
+   2. Extensions > Apps Script, paste the Code.gs provided alongside this file.
+   3. Deploy > New deployment > Web app > Execute as: Me, Who has access: Anyone.
+   4. Copy the Web app URL and paste it between the quotes below. */
+const GOOGLE_SCRIPT_URL = "";
+
+function buildSubmission(){
+  const qa=document.getElementById('cd_qa'),mgr=document.getElementById('cd_mgr'),ag=document.getElementById('cd_agent');
+  const t={Yes:0,No:0,Partial:0,NA:0};
+  Object.values(responses).forEach(v=>{t[v]=(t[v]||0)+1;});
+  const total=DATA.A.length+DATA.B.length, answered=Object.keys(responses).length;
+  const headers=['QA Name','QA Email (Submitted by)','Manager (L1)','Manager Email','Agent Name','Agent Email',
+    'Lead ID','Call Date & Time','Audit Date','Call Duration','Yes','No','Partial','NA','Answered','Total'];
+  const values=[qa.value,selEmail(qa),mgr.value,selEmail(mgr),ag.value,selEmail(ag),
+    document.getElementById('cd_lead').value,document.getElementById('cd_calldt').value,
+    document.getElementById('cd_auditdate').value,document.getElementById('cd_duration').value,
+    t.Yes,t.No,t.Partial,t.NA,answered,total];
+  const remarks=[];
+  ['A','B'].forEach(p=>DATA[p].forEach((it,i)=>{
+    const id=p+'_'+i;
+    headers.push('Part '+p+' — '+it.param);
+    values.push(responses[id]||'');
+    if(notes[id]) remarks.push('['+it.param+'] '+notes[id]);
+  }));
+  headers.push('Remarks');
+  values.push(remarks.join('  |  '));
+  return {headers,values};
+}
+
+function toast(msg,ok){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast show '+(ok?'ok':'err');
+  clearTimeout(el._t);el._t=setTimeout(()=>{el.className='toast';},4000);
+}
+
+async function submitToGoogle(){
+  if(!document.getElementById('cd_qa').value||!document.getElementById('cd_agent').value){
+    toast('Select QA and Agent before submitting.',false);return;
+  }
+  if(!GOOGLE_SCRIPT_URL){
+    toast('No Google URL set — paste your Apps Script Web App URL into GOOGLE_SCRIPT_URL.',false);return;
+  }
+  const btn=document.getElementById('submitBtn'),label=btn.textContent;
+  btn.disabled=true;btn.textContent='Submitting…';
+  try{
+    await fetch(GOOGLE_SCRIPT_URL,{
+      method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(buildSubmission())
+    });
+    toast('Submitted to Google Sheet \u2713',true);
+  }catch(e){
+    toast('Submit failed — check the URL and your connection.',false);
+  }finally{
+    btn.disabled=false;btn.textContent=label;
+  }
+}
+const QA_LIST = [
+  {group:"Team Leads", people:[
+    {n:"Khyati Choudhary", e:"khyati.choudhary@ambak.com"},
+    {n:"Riddhi Gala", e:"riddhi.gala@ambak.com"},
+    {n:"Saivikrama Vikram Angrish", e:"sai.angrish@ambak.com"},
+    {n:"Ankit", e:"ankit.@ambak.com"},
+    {n:"Hitesh Deka", e:"hitesh.deka@ambak.com"},
+    {n:"Sunny Bari", e:"sunny.bari@ambak.com"},
+    {n:"Puneet Ranjan", e:"puneet.ranjan@ambak.com"},
+    {n:"Devadyuti Nag", e:"devadyuti.nag@ambak.com"},
+    {n:"Priyank Rawat", e:"priyank.rawat@ambak.com"},
+    {n:"Christina Mary John", e:"christina.john@ambak.com"}
+  ]},
+  {group:"L1 Managers", people:[
+    {n:"Anshul Kumar", e:"anshul.kumar@ambak.com"},
+    {n:"Ashad Pirzade", e:"ashad.pirzade@ambak.com"},
+    {n:"Lukman Qureshi", e:"lukman.qureshi@ambak.com"},
+    {n:"Sanchit Sisodiya", e:"sanchit.sisodiya@ambak.com"},
+    {n:"Syed Adil", e:"syed.adil@ambak.com"}
+  ]}
+];
+
+const AGENTS = [
+  {n:"Ravi Kumar", e:"ravi.singh@ambak.com"},
+  {n:"Megha Jain", e:"megha.jain@ambak.com"},
+  {n:"Alok", e:"alok.kumar@ambak.com"},
+  {n:"Yash Verma", e:"yash.verma@ambak.com"},
+  {n:"Shikha", e:"shikha.1@ambak.com"},
+  {n:"Pawan Kumar", e:"pawan.kumar@ambak.com"},
+  {n:"Priya Bisht", e:"priya.bisht@ambak.com"},
+  {n:"Shalni Kumari", e:"shalni.kumari@ambak.com"},
+  {n:"Dakshata Barku Raundhal", e:"dakshataraundhal@ambak.com"},
+  {n:"Kishor Bhandarkar", e:"nandkishor.bhandarkar@ambak.com"},
+  {n:"Mohammad Nashir Aslam Shaikh", e:"mohammad.shaikh@ambak.com"},
+  {n:"Akshata Dattaram Chavan", e:"akshata.chavan@ambak.com"},
+  {n:"Mahesh Shinge", e:"mahesh.shinge@ambak.com"},
+  {n:"Rameshwar Santosh Jadhav", e:"rameshwar.jadhav@ambak.com"},
+  {n:"Vaishali Laxman Jethva", e:"vaishali.jethva@ambak.com"},
+  {n:"Madhuri Sudhir Tambe", e:"madhuri.tambe@ambak.com"},
+  {n:"Sonali Dinesh Jawale", e:"sonali.jawale@ambak.com"},
+  {n:"Kajal Prajapati", e:"kajal.prajapati@ambak.com"},
+  {n:"Dinar Dildar Hussain Khan", e:"dinar.khan@ambak.com"},
+  {n:"Rakesh Satyanarayana Mamidala", e:"rakesh.mamidala@ambak.com"},
+  {n:"Ajay Damu Pawar", e:"ajay.pawar@ambak.com"},
+  {n:"Janhavi Vilas Adivarekar", e:"janhavi.adivareka@ambak.com"},
+  {n:"Anil Narsayya Keti", e:"anil.keti@ambak.com"},
+  {n:"Amitkumar Rajendarkumar Peepal", e:"amitkumar.peepal@ambak.com"},
+  {n:"Anita Baban Shinde", e:"anita.shinde@ambak.com"},
+  {n:"Bapurao Ramrao Gholap", e:"bapurao.gholap@ambak.com"},
+  {n:"Amit Krishnakumar Prajapati", e:"amit.prajapati@ambak.com"},
+  {n:"Shubham Dilip Rathor", e:"shubham.rathor@ambak.com"},
+  {n:"Riddhi Popat Shrisunder", e:"riddhi.shrisunder@ambak.com"},
+  {n:"Ravi Kumar Chaudhary", e:"ravi.chaudhary@ambak.com"},
+  {n:"Sughar Singh Rajpoot", e:"sughar.rajpoot@ambak.com"},
+  {n:"Ritika Kumari", e:"ritika.kumari@ambak.com"},
+  {n:"Ridhi", e:"ridhi.1@ambak.com"},
+  {n:"Akhilesh Singh", e:"akhilesh.singh@ambak.com"},
+  {n:"Gaurav Sain", e:"gaurav.sain@ambak.com"},
+  {n:"Kuldeep", e:"kuldeep.1@ambak.com"},
+  {n:"Ravindra Kumar Sah", e:"ravindra.sah@ambak.com"},
+  {n:"Shivam", e:"shivam.sharma@ambak.com"},
+  {n:"Komal Garg", e:"komal.garg@ambak.com"},
+  {n:"Md Faiyaz", e:"md.faiyaz@ambak.com"},
+  {n:"Sonu Dayma", e:"sonu.dayma@ambak.com"},
+  {n:"Lokesh Yadav", e:"lokesh.yadav@ambak.com"},
+  {n:"Uttam Tiwari", e:"uttam.tiwari@ambak.com"},
+  {n:"Harendra Sharma", e:"harendra.sharma@ambak.com"},
+  {n:"Sameer Singh", e:"sameer.singh@ambak.com"},
+  {n:"Mamta Kumari", e:"mamta.kumari@ambak.com"},
+  {n:"Bhavana Prajapati", e:"bhavana.prajapati@ambak.com"},
+  {n:"Jatin Kumar", e:"jatin.kumar@ambak.com"},
+  {n:"Shivam Yadav", e:"shivam.yadav1@ambak.com"},
+  {n:"Rashid Ali", e:"rashid.ali@ambak.com"},
+  {n:"Sanneboina Mahesh", e:"sanneboina.mahesh@ambak.com"},
+  {n:"Loganathan G", e:"loganathan.g@ambak.com"},
+  {n:"Shravya Manjunath", e:"shravya.manjunath@ambak.com"},
+  {n:"Abdul Kalam", e:"abdul.kalam@ambak.com"}
+];
+
+const qaSel=document.getElementById('cd_qa');
+const mgrSel=document.getElementById('cd_mgr');
+const agentSel=document.getElementById('cd_agent');
+function fill(sel,people){people.forEach(p=>{
+  const o=document.createElement('option');o.value=p.n;o.dataset.email=p.e;o.textContent=p.n;sel.appendChild(o);
+});}
+fill(qaSel, QA_LIST[0].people);     // Team Leads
+fill(mgrSel, QA_LIST[1].people);    // L1 Managers
+fill(agentSel, AGENTS);
+function selEmail(sel){const o=sel.options[sel.selectedIndex];return o&&o.dataset?o.dataset.email||'':'';}
+
+/* ---------- Wire up ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showPart(t.dataset.part)));
+document.getElementById('exportBtn').addEventListener('click',exportCSV);
+document.getElementById('submitBtn').addEventListener('click',submitToGoogle);
+const _today=new Date().toISOString().slice(0,10);
+document.getElementById('cd_auditdate').value=_today;
+document.getElementById('cd_calldt').value=_today+'T'+new Date().toTimeString().slice(0,5);
+// close open mobile tooltips when tapping elsewhere
+document.addEventListener('click',e=>{
+  if(!e.target.classList.contains('info'))
+    document.querySelectorAll('.info.open').forEach(x=>x.classList.remove('open'));
+});
+showPart('A');
+</script>
+</body>
+</html>

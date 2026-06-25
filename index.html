@@ -654,11 +654,8 @@ const AGENTS = [
 const qaSel=document.getElementById('cd_qa');
 const agentSel=document.getElementById('cd_agent');
 function opt(p){const o=document.createElement('option');o.value=p.n;o.dataset.email=p.e;o.textContent=p.n;return o;}
-QA_LIST.forEach(grp=>{                       // Team Leads + L1 Managers in one dropdown
-  const og=document.createElement('optgroup');og.label=grp.group;
-  grp.people.forEach(p=>og.appendChild(opt(p)));
-  qaSel.appendChild(og);
-});
+// One flat list of all QA / Manager names (Team Leads + L1 Managers), no sub-groups
+QA_LIST.forEach(grp=>grp.people.forEach(p=>qaSel.appendChild(opt(p))));
 AGENTS.forEach(p=>agentSel.appendChild(opt(p)));
 function selEmail(sel){const o=sel.options[sel.selectedIndex];return o&&o.dataset?o.dataset.email||'':'';}
 

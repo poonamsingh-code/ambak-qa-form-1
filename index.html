@@ -252,10 +252,8 @@
   <section class="call-details">
     <h3><span class="dot"></span>Call Details</h3>
     <div class="cd-grid">
-      <label>QA Name (Team Lead)
-        <select id="cd_qa"><option value="">— select QA —</option></select></label>
-      <label>Manager (L1)
-        <select id="cd_mgr"><option value="">— select manager —</option></select></label>
+      <label>QA / Manager Name
+        <select id="cd_qa"><option value="">— select QA / Manager —</option></select></label>
       <label>Agent Name
         <select id="cd_agent"><option value="">— select agent —</option></select></label>
       <label>Lead ID
@@ -490,8 +488,8 @@ function updateScore(){
 /* ---------- CSV export ---------- */
 function exportCSV(){
   const meta=[
-    ['QA Name (Team Lead)', document.getElementById('cd_qa').value],
-    ['QA Email', selEmail(document.getElementById('cd_qa'))],
+    ['QA / Manager Name', document.getElementById('cd_qa').value],
+    ['QA / Manager Email', selEmail(document.getElementById('cd_qa'))],
     ['Agent Name', document.getElementById('cd_agent').value],
     ['Agent Email', selEmail(document.getElementById('cd_agent'))],
     ['Lead ID', document.getElementById('cd_lead').value],
@@ -524,13 +522,13 @@ function exportCSV(){
 const GOOGLE_SCRIPT_URL = "";
 
 function buildSubmission(){
-  const qa=document.getElementById('cd_qa'),mgr=document.getElementById('cd_mgr'),ag=document.getElementById('cd_agent');
+  const qa=document.getElementById('cd_qa'),ag=document.getElementById('cd_agent');
   const t={Yes:0,No:0,Partial:0,NA:0};
   Object.values(responses).forEach(v=>{t[v]=(t[v]||0)+1;});
   const total=DATA.A.length+DATA.B.length, answered=Object.keys(responses).length;
-  const headers=['QA Name','QA Email (Submitted by)','Manager (L1)','Manager Email','Agent Name','Agent Email',
+  const headers=['QA / Manager Name','QA / Manager Email (Submitted by)','Agent Name','Agent Email',
     'Lead ID','Call Date & Time','Audit Date','Call Duration','Yes','No','Partial','NA','Answered','Total'];
-  const values=[qa.value,selEmail(qa),mgr.value,selEmail(mgr),ag.value,selEmail(ag),
+  const values=[qa.value,selEmail(qa),ag.value,selEmail(ag),
     document.getElementById('cd_lead').value,document.getElementById('cd_calldt').value,
     document.getElementById('cd_auditdate').value,document.getElementById('cd_duration').value,
     t.Yes,t.No,t.Partial,t.NA,answered,total];
@@ -654,14 +652,14 @@ const AGENTS = [
 ];
 
 const qaSel=document.getElementById('cd_qa');
-const mgrSel=document.getElementById('cd_mgr');
 const agentSel=document.getElementById('cd_agent');
-function fill(sel,people){people.forEach(p=>{
-  const o=document.createElement('option');o.value=p.n;o.dataset.email=p.e;o.textContent=p.n;sel.appendChild(o);
-});}
-fill(qaSel, QA_LIST[0].people);     // Team Leads
-fill(mgrSel, QA_LIST[1].people);    // L1 Managers
-fill(agentSel, AGENTS);
+function opt(p){const o=document.createElement('option');o.value=p.n;o.dataset.email=p.e;o.textContent=p.n;return o;}
+QA_LIST.forEach(grp=>{                       // Team Leads + L1 Managers in one dropdown
+  const og=document.createElement('optgroup');og.label=grp.group;
+  grp.people.forEach(p=>og.appendChild(opt(p)));
+  qaSel.appendChild(og);
+});
+AGENTS.forEach(p=>agentSel.appendChild(opt(p)));
 function selEmail(sel){const o=sel.options[sel.selectedIndex];return o&&o.dataset?o.dataset.email||'':'';}
 
 /* ---------- Wire up ---------- */

@@ -526,22 +526,28 @@ function buildSubmission(){
   const t={Yes:0,No:0,Partial:0,NA:0};
   Object.values(responses).forEach(v=>{t[v]=(t[v]||0)+1;});
   const total=DATA.A.length+DATA.B.length, answered=Object.keys(responses).length;
-  const headers=['QA / Manager Name','QA / Manager Email (Submitted by)','Agent Name','Agent Email',
-    'Lead ID','Call Date & Time','Audit Date','Call Duration','Yes','No','Partial','NA','Answered','Total'];
-  const values=[qa.value,selEmail(qa),ag.value,selEmail(ag),
-    document.getElementById('cd_lead').value,document.getElementById('cd_calldt').value,
-    document.getElementById('cd_auditdate').value,document.getElementById('cd_duration').value,
-    t.Yes,t.No,t.Partial,t.NA,answered,total];
-  const remarks=[];
+  const calldt=(document.getElementById('cd_calldt').value||'').replace('T',' ');
+  // Leading columns — kept exactly as before, in order
+  const meta=[
+    ['QA / Manager Name', qa.value],
+    ['QA / Manager Email (Submitted by)', selEmail(qa)],
+    ['Agent Name', ag.value],
+    ['Agent Email', selEmail(ag)],
+    ['Lead ID', document.getElementById('cd_lead').value],
+    ['Call Date & Time', calldt],
+    ['Audit Date', document.getElementById('cd_auditdate').value],
+    ['Call Duration', document.getElementById('cd_duration').value],
+    ['Yes', t.Yes], ['No', t.No], ['Partial', t.Partial], ['NA', t.NA],
+    ['Answered', answered], ['Total', total]
+  ];
+  // One entry per parameter (Part A then Part B) — drives the 4-row header + value + remark
+  const items=[];
   ['A','B'].forEach(p=>DATA[p].forEach((it,i)=>{
     const id=p+'_'+i;
-    headers.push('Part '+p+' — '+it.param);
-    values.push(responses[id]||'');
-    if(notes[id]) remarks.push('['+it.param+'] '+notes[id]);
+    items.push({part:'Part '+p, cat:it.cat, param:it.param, question:it.q,
+      response:responses[id]||'', remark:notes[id]||''});
   }));
-  headers.push('Remarks');
-  values.push(remarks.join('  |  '));
-  return {headers,values};
+  return {meta, items};
 }
 
 function toast(msg,ok){

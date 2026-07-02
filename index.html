@@ -357,6 +357,7 @@
       <span class="chip no">No <b id="t_no">0</b></span>
       <span class="chip partial">Partial <b id="t_partial">0</b></span>
       <span class="chip na">NA <b id="t_na">0</b></span>
+      <span class="chip" style="background:var(--teal-tint);color:var(--teal)">Score <b id="t_score">—</b></span>
     </div>
     <div class="actions">
       <button class="btn" onclick="window.print()">Print</button>
@@ -597,18 +598,35 @@ function updateHint(){
     `Showing ${a+b} parameters for a ${callType} call (Part A: ${a} · Part B: ${b}). Only these are counted and submitted.`;
 }
 
+/* ---------- Scoring ----------
+   Each parameter carries 1 mark: Yes = 1, Partial = 0.5, No = 0.
+   NA parameters are excluded from the average (removed from the denominator). */
+function computeScore(){
+  const vis=[...visibleItems('A'),...visibleItems('B')];
+  let earned=0, scoreable=0, answered=0, t={Yes:0,No:0,Partial:0,NA:0};
+  vis.forEach(({id})=>{
+    const v=responses[id];
+    if(!v) return;
+    answered++; t[v]=(t[v]||0)+1;
+    if(v==='NA') return;              // excluded from scoring
+    scoreable++;
+    if(v==='Yes') earned+=1;
+    else if(v==='Partial') earned+=0.5;
+  });
+  const pct = scoreable ? Math.round((earned/scoreable)*1000)/10 : null; // 1 decimal
+  return {earned, scoreable, answered, total:vis.length, t, pct};
+}
+
 function updateScore(){
   const visA=visibleItems('A'), visB=visibleItems('B');
   const total = visA.length + visB.length;
-  let answered=0, t={Yes:0,No:0,Partial:0,NA:0};
-  [...visA,...visB].forEach(({id})=>{
-    const v=responses[id];
-    if(v){answered++; t[v]=(t[v]||0)+1;}
-  });
+  const s = computeScore();
+  const answered = s.answered, t = s.t;
   document.getElementById('t_yes').textContent=t.Yes;
   document.getElementById('t_no').textContent=t.No;
   document.getElementById('t_partial').textContent=t.Partial;
   document.getElementById('t_na').textContent=t.NA;
+  document.getElementById('t_score').textContent = s.pct===null ? '—' : s.pct+'%';
   const pct = total? Math.round(answered/total*100):0;
   document.getElementById('ringPct').textContent=pct+'%';
   const C=2*Math.PI*19;
@@ -632,6 +650,10 @@ function exportCSV(){
     ['Call Duration', document.getElementById('cd_duration').value],
     ['Calibration Type', document.getElementById('cd_calltype').value]
   ];
+  const s=computeScore();
+  meta.push(['Avg Score %', s.pct===null?'':s.pct]);
+  meta.push(['Marks Earned', s.earned]);
+  meta.push(['Marks Scoreable', s.scoreable]);
   const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
   let rows=[['Section','Category','Parameter','Call type','Audit question','Response','Remark']];
   ['A','B'].forEach(p=>{
@@ -659,13 +681,8 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbza0Vi3F-wGW6
 
 function buildSubmission(){
   const qa=document.getElementById('cd_qa'),ag=document.getElementById('cd_agent');
-  const visA=visibleItems('A'), visB=visibleItems('B');
-  const t={Yes:0,No:0,Partial:0,NA:0};
-  let answered=0;
-  [...visA,...visB].forEach(({id})=>{
-    const v=responses[id]; if(v){answered++;t[v]=(t[v]||0)+1;}
-  });
-  const total=visA.length+visB.length;
+  const s=computeScore();
+  const t=s.t, answered=s.answered, total=s.total;
   const calldt=(document.getElementById('cd_calldt').value||'').replace('T',' ');
   // Leading columns — kept in order
   const meta=[
@@ -680,7 +697,9 @@ function buildSubmission(){
     ['Call Duration', document.getElementById('cd_duration').value],
     ['Calibration Type', document.getElementById('cd_calltype').value],
     ['Yes', t.Yes], ['No', t.No], ['Partial', t.Partial], ['NA', t.NA],
-    ['Answered', answered], ['Total', total]
+    ['Answered', answered], ['Total', total],
+    ['Avg Score %', s.pct===null?'':s.pct],
+    ['Marks Earned', s.earned], ['Marks Scoreable', s.scoreable]
   ];
   // Only parameters that apply to the selected call type
   const items=[];
@@ -702,6 +721,11 @@ async function submitToGoogle(){
   if(!document.getElementById('cd_qa').value||!document.getElementById('cd_agent').value){
     toast('Select QA and Agent before submitting.',false);return;
   }
+  const chk=computeScore();
+  if(chk.answered<chk.total){
+    toast((chk.total-chk.answered)+' parameter(s) still unanswered — please score all before submitting.',false);
+    closeReview();return;
+  }
   if(!GOOGLE_SCRIPT_URL){
     toast('No Google URL set — paste your Apps Script Web App URL into GOOGLE_SCRIPT_URL.',false);return;
   }
@@ -714,10 +738,10 @@ async function submitToGoogle(){
       body:JSON.stringify(buildSubmission())
     });
     closeReview();
-    toast('Submitted to Google Sheet \u2713',true);
+    toast('Submitted to Google Sheet \u2713 — starting a new audit…',true);
+    setTimeout(()=>{location.reload();},1800);   // auto-refresh for the next audit
   }catch(e){
     toast('Submit failed — check the URL and your connection.',false);
-  }finally{
     btn.disabled=false;btn.textContent=label;
   }
 }
@@ -727,13 +751,24 @@ function openReview(){
   const qa=document.getElementById('cd_qa'), ag=document.getElementById('cd_agent');
   if(!qa.value||!ag.value){toast('Select QA and Agent before submitting.',false);return;}
 
-  const visA=visibleItems('A'), visB=visibleItems('B');
-  const t={Yes:0,No:0,Partial:0,NA:0};
-  let answered=0;
-  [...visA,...visB].forEach(({id})=>{
-    const v=responses[id]; if(v){answered++;t[v]=(t[v]||0)+1;}
-  });
-  const total=visA.length+visB.length;
+  const s=computeScore();
+  const answered=s.answered, total=s.total, t=s.t;
+
+  // Every visible parameter must be answered before submitting
+  if(answered<total){
+    toast((total-answered)+' parameter(s) still unanswered — please score all before submitting.',false);
+    // jump to the first unanswered row
+    const firstMissing=[...visibleItems('A'),...visibleItems('B')].find(({id})=>!responses[id]);
+    if(firstMissing){
+      const missPart=firstMissing.id.charAt(0);
+      if(missPart!==currentPart) showPart(missPart);
+      const el=document.getElementById('row_'+firstMissing.id);
+      if(el){el.scrollIntoView({behavior:'smooth',block:'center'});
+        el.style.borderColor='var(--no)';
+        setTimeout(()=>{el.style.borderColor='';},2500);}
+    }
+    return;
+  }
 
   const det=[
     ['QA / Manager', qa.value],
@@ -754,10 +789,10 @@ function openReview(){
     <span class="chip partial">Partial <b>${t.Partial}</b></span>
     <span class="chip na">NA <b>${t.NA}</b></span>
     <span class="chip" style="background:var(--teal-tint);color:var(--teal)">Answered <b>${answered}/${total}</b></span>
+    <span class="chip" style="background:var(--yes-bg);color:var(--yes)">Avg Score <b>${s.pct===null?'—':s.pct+'%'}</b> (${s.earned}/${s.scoreable})</span>
   </div>`;
 
-  const warn = answered<total
-    ? `<div class="sum-warn">${total-answered} parameter(s) not answered yet — they'll be saved blank.</div>` : '';
+  const warn = '';
 
   let list='';
   ['A','B'].forEach(p=>{

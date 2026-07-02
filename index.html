@@ -77,19 +77,36 @@
   .cd-grid input:focus,.cd-grid select:focus{outline:2px solid var(--teal);outline-offset:0;border-color:var(--teal)}
   .cd-grid select:disabled{background:#f4f6f8;color:#aab4bf;cursor:not-allowed}
 
-  /* ---------- Meta fields ---------- */
-  .meta{
-    display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;
-    margin-top:20px;
+  /* ---------- Call Type segmented toggle ---------- */
+  .calltype{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:14px 18px;margin:0 0 18px;box-shadow:var(--shadow);
   }
-  .meta label{display:flex;flex-direction:column;gap:6px;font-size:11px;
-    font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.85}
-  .meta input{
-    border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);
-    color:#fff;border-radius:9px;padding:9px 11px;font-size:14px;font-family:inherit;
+  .calltype .ct-label{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--ink);
+    display:flex;align-items:center;gap:9px;
   }
-  .meta input::placeholder{color:rgba(255,255,255,.6)}
-  .meta input:focus{outline:2px solid #fff;outline-offset:1px;background:rgba(255,255,255,.18)}
+  .calltype .ct-label .dot{width:9px;height:9px;border-radius:50%;background:var(--teal)}
+  .seg{display:flex;background:var(--paper);border:1px solid var(--line-strong);
+    border-radius:11px;padding:3px;gap:3px}
+  .seg button{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;
+    border:none;background:transparent;color:var(--ink-soft);border-radius:8px;
+    padding:8px 20px;cursor:pointer;transition:.14s;
+  }
+  .seg button[aria-pressed="true"]{background:var(--teal);color:#fff;
+    box-shadow:0 2px 8px rgba(74,59,156,.3)}
+  .calltype .ct-hint{font-size:12px;color:var(--muted);flex:1;min-width:180px}
+
+  /* mode tag on rows */
+  .mode-tag{
+    font-family:'Inter';font-weight:600;font-size:10px;letter-spacing:.06em;
+    text-transform:uppercase;padding:2px 8px;border-radius:20px;white-space:nowrap;
+  }
+  .mode-tag.f{background:var(--teal-tint);color:var(--teal)}
+  .mode-tag.fu{background:#e6f1fb;color:#2568a8}
 
   /* ---------- Tabs ---------- */
   .tabs{display:flex;gap:8px;margin:0 0 18px;position:sticky;top:0;z-index:30;
@@ -271,7 +288,7 @@
       <div>
         <p class="eyebrow">Quality Audit · Home Loan</p>
         <h1>FBM Call Audit Form</h1>
-        <p class="sub">Score each parameter against the call. Hover the <strong>&#9432;</strong> on any row to see the guidance and example script from the rubric.</p>
+        <p class="sub">Pick the call type, then score each parameter against the call. Hover the <strong>&#9432;</strong> on any row to see the guidance and example script from the rubric.</p>
       </div>
       <div class="logo" aria-label="Ambak">
         <svg viewBox="0 0 40 52" aria-hidden="true">
@@ -302,6 +319,15 @@
       <label>Call Duration
         <input type="text" id="cd_duration" placeholder="e.g. 5:32 or 332 sec"></label>
     </div>
+  </section>
+
+  <section class="calltype">
+    <span class="ct-label"><span class="dot"></span>Call Type</span>
+    <div class="seg" role="group" aria-label="Call type">
+      <button type="button" id="ctFresh" aria-pressed="true">Fresh</button>
+      <button type="button" id="ctFollow" aria-pressed="false">Follow up</button>
+    </div>
+    <span class="ct-hint" id="ctHint"></span>
   </section>
 
   <div class="tabs" role="tablist">
@@ -352,98 +378,124 @@
 </div>
 
 <script>
-/* ---------- Data extracted from the audit rubric sheet ---------- */
+/* ---------- Data extracted from the audit rubric sheet ("Updated" tab) ----------
+   mode: "F"  = Fresh only
+         "FU" = Follow up only
+         "B"  = Both (Fresh / Follow up)                                        */
 const YN  = ["Yes","No","NA"];
 const YNP = ["Yes","No","Partial","NA"];
 
 const DATA = {
   A: [
-    {cat:"Call Opening", param:"Greetings the customer", q:"Did FBM greet the customer?", opts:YN, exp:"Good Morning / Good Evening / Namaskar.\nYes: \u201CGood morning Rohit ji\u201D — start the call with this line."},
-    {cat:"Call Opening", param:"Customer name mentioned", q:"Did FBM address the customer with their name?", opts:YN, exp:"Yes: \u201CGood morning Rohit ji\u201D (uses the customer's name).\nNo: Did not use the customer's name."},
-    {cat:"Call Opening", param:"Self Intro", q:"Did FBM introduce themselves on the call?", opts:YN, exp:"\u201CI am Sunny, your Home Loan advisor from Ambak.\u201D"},
-    {cat:"Call Opening", param:"Ambak brand mention", q:"Did FBM introduce Ambak?", opts:YN, exp:"\u201CAmbak is the new-age home loan marketplace to help you with your home loan needs.\u201D"},
-    {cat:"Call Opening", param:"Lead source mention (if available)", q:"Did FBM make the right handshake / make the customer comfortable about why they're getting a call from Ambak?", opts:YN, exp:"Confirm the source of lead — partner's name / website name.\nYes: \u201CAs I can see you were checking home loans on our website\u201D or \u201CI received your details from our partner.\u201D\nNo: Did not mention at all."},
+    {cat:"Call Opening", mode:"B", param:"Greetings the customer", q:"Did FBM greet the customer?", opts:YN, exp:"Good Morning / Good Evening / Namaskar.\nYes: \u201CGood morning Rohit ji\u201D — start the call with this line."},
+    {cat:"Call Opening", mode:"B", param:"Customer name mentioned", q:"Did FBM address the customer with their name?", opts:YN, exp:"Yes: \u201CGood morning Rohit ji\u201D (uses the customer's name).\nNo: Did not use the customer's name."},
+    {cat:"Call Opening", mode:"B", param:"Self Intro", q:"Did FBM introduce themselves on the call?", opts:YN, exp:"\u201CI am Sunny, your Home Loan advisor from Ambak.\u201D"},
+    {cat:"Call Opening", mode:"B", param:"Ambak brand mention", q:"Did FBM introduce Ambak?", opts:YN, exp:"\u201CAmbak is the new-age home loan marketplace to help you with your home loan needs.\u201D"},
+    {cat:"Call Opening", mode:"F", param:"Lead source mention (if available)", q:"Did FBM make the right handshake / make the customer comfortable about why they're getting a call from Ambak?", opts:YN, exp:"Confirm the source of lead — partner's name / website name.\nYes: \u201CAs I can see you were checking home loans on our website\u201D or \u201CI received your details from our partner.\u201D\nNo: Did not mention at all."},
 
-    {cat:"Profiling (Loan / Property / Persona)", param:"Loan Type — HL / LAP / BT", q:"Did FBM confirm which type of loan it is (HL / LAP / BT)?", opts:YN, exp:"Ask the loan type: HL or LAP.\nYes: \u201CAre you looking for a Home Loan or Loan Against Property?\u201D\nNo: Did not ask at all."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Loan Amount Required", q:"Did FBM confirm how much loan amount is required?", opts:YN, exp:"Yes: \u201CMay I know how much loan amount you require?\u201D\nNo: Did not ask at all."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Tenure preference", q:"Did FBM ask for the desired loan tenure?", opts:YN, exp:"Confirm the tenure required.\nYes: \u201CFor how long do you need the home loan — 10, 15 or 25 years?\u201D\nNo: Did not confirm at all."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Token Amount Paid status", q:"Did FBM ask if the customer has paid a token amount?", opts:YN, exp:"Ask whether the customer has paid the token amount and got the agreement done.\nYes: \u201CHave you paid the token amount, and how much? And do you have the agreement letter (ATS/BBA/Provisional allotment letter)?\u201D\nNo: Did not ask."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Token amount Paid", q:"Did FBM ask how much token amount was paid?", opts:YN, exp:"Yes: \u201CHow much amount have you paid, sir?\u201D\nNo: Did not ask at all."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Agreement letter status", q:"Did FBM ask for the agreement letter (ATS / BBA / Provisional Allotment letter — whichever applies)?", opts:YN, exp:"Ask if the customer has received the ATS from the seller."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Location of the property / Project", q:"Did FBM confirm the property location, project name and pincode?", opts:YN, exp:"Yes: \u201CCould you please tell me the property location, project name and pincode?\u201D\nNo: Did not ask at all."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Ready to move / Under construction", q:"Did FBM confirm whether the property is ready to move or under construction?", opts:YN, exp:"Ask if the property is ready to move or under construction."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Market Value", q:"Did FBM confirm the market value?", opts:YN, exp:"Ask the market and agreement value.\nComplete: asked market value and agreement value (amount decided for registration).\nSemi: asked only one of the two.\nNo: asked neither."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Agreement value", q:"Did FBM confirm the agreement value (amount mentioned during property registry)?", opts:YN, exp:"Ask the agreement value — this value is declared during property registration."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Profession", q:"Did FBM ask the customer's profession (salaried or self-employed)?", opts:YN, exp:"Does the customer have a job or own a business, and for how long.\nComplete: \u201CAre you a salaried person or self-employed?\u201D\nSemi: asked profession but forgot tenure.\nNo: Did not ask."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Profession Tenure", q:"Did FBM confirm tenure in the company / business?", opts:YN, exp:"How many years in the current job or business."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Salaried Income: In-hand Salary", q:"Did FBM confirm the in-hand salary per month?", opts:YN, exp:"Salaried: in-hand take-home and gross salary per month.\nComplete: asked in-hand AND gross.\nSemi: asked only in-hand.\nNo: Did not ask."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Salaried Income: Gross Salary / month", q:"Did FBM confirm the gross salary per month?", opts:YN, exp:"Salaried: in-hand take-home and gross salary per month.\nComplete: asked in-hand AND gross.\nSemi: asked only in-hand.\nNo: Did not ask."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"SEP / SENP: ITR / Gross Annual Income", q:"Did FBM confirm the self-employed customer's gross annual income / income shown in ITR?", opts:YN, exp:"Self-employed: income shown in ITR or GST return.\nComplete: ITR and GST.\nSemi: only one.\nNo: Did not ask."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"New / Resale | Ready / Under construction", q:"Did FBM confirm whether the property is new or resale and ready-to-move or under construction?", opts:YN, exp:"Confirm DA / resale and ready-to-move / under construction.\nYes: \u201CIs this a direct allotment / new property or resale? And is it ready to move or under construction?\u201D\nNo: Did not ask."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Personal: Age", q:"Did FBM confirm the customer's age as per ID proof?", opts:YN, exp:"FBM needs age, current address pincode and marital status (also mobile & email if not in the lead).\nComplete: all three.\nSemi: any two.\nPartial: any one."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Personal: Current Address", q:"Did FBM confirm the customer's current address?", opts:YN, exp:"Ask where the customer is presently living — area name and pincode."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Personal: Marital Status", q:"Did FBM confirm the customer's marital status?", opts:YN, exp:"Ask if the customer is married or unmarried."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Obligation: Running loan / CC outstanding", q:"Did FBM check for any existing loan or credit card obligations?", opts:YN, exp:"Check for running loans and when they end.\nYes: \u201CDo you currently have any loan running or credit card outstanding?\u201D\nNo: Did not ask."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"CIBIL Score ask / Fetch", q:"Did FBM ask for or verify the customer's CIBIL score?", opts:YN, exp:"Ask or fetch the CIBIL score.\nYes: \u201CMay I know your CIBIL score, or let me check it for you?\u201D\nNo: Did not ask or verify."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Co-Applicant: Age (DOB)", q:"Did FBM confirm the co-applicant's age as per ID proof?", opts:YN, exp:"FBM needs to ask the date of birth as per Aadhaar & PAN card."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Co-Applicant: Current Address", q:"Did FBM confirm the co-applicant's current address?", opts:YN, exp:"Ask current city and pincode only — not the full address."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Co-Applicant: Marital Status", q:"Did FBM confirm the co-applicant's marital status?", opts:YN, exp:"Confirm whether the co-applicant is married or unmarried."},
-    {cat:"Profiling (Loan / Property / Persona)", param:"Co-Applicant: Running loan / CC outstanding", q:"Did FBM check for the co-applicant's existing loan or credit card obligations?", opts:YN, exp:"Check for running loans and when they end.\nYes: \u201CDo you currently have any loan running or credit card outstanding?\u201D\nNo: Did not ask."},
+    {cat:"Previous Context", mode:"FU", param:"Previous conversation context", q:"Did FBM brief the customer about the previous conversation?", opts:YN, exp:"Briefly discuss what was already covered in the last call.\nYes: \u201CSir, as I informed you last time\u2026\u201D\nNo: Did not brief at all."},
 
-    {cat:"Call Etiquette", param:"Personalization", q:"Did FBM personalize the conversation using the customer's name?", opts:YN, exp:"Use the customer's name 3\u20134 times through the call.\nYes: \u201CRohit ji, as I can see\u2026\u201D / \u201CRohit ji, I would like to inform you\u2026\u201D\nNo: using \u201CSir\u201D throughout."},
-    {cat:"Call Etiquette", param:"Tone / Pace / Intonation / Confidence", q:"Did FBM maintain a professional tone, pace and confidence?", opts:YN, exp:"Maintain positive tone, pace and confidence.\nYes: professional communication.\nNo: poor tone or low confidence."},
-    {cat:"Call Etiquette", param:"Attentiveness / Rude", q:"Did FBM remain attentive and courteous throughout?", opts:YN, exp:"Remain attentive and polite.\nYes: listened actively and was respectful.\nNo: sounded rude or distracted."},
-    {cat:"Call Etiquette", param:"Apology / Empathy", q:"Did FBM show empathy and apologize wherever required?", opts:YN, exp:"Show empathy and apologize where required.\nYes: acknowledged customer concern and apologised.\nNo: no empathy shown."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Loan Type — HL / LAP / BT", q:"Did FBM confirm which type of loan it is (HL / LAP / BT)?", opts:YN, exp:"Ask the loan type: HL or LAP.\nYes: \u201CAre you looking for a Home Loan or Loan Against Property?\u201D\nNo: Did not ask at all."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Loan Amount Required", q:"Did FBM confirm how much loan amount is required?", opts:YN, exp:"Yes: \u201CMay I know how much loan amount you require?\u201D\nNo: Did not ask at all."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Tenure preference", q:"Did FBM ask for the desired loan tenure?", opts:YN, exp:"Confirm the tenure required.\nYes: \u201CFor how long do you need the home loan — 10, 15 or 25 years?\u201D\nNo: Did not confirm at all."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Token Amount Paid status", q:"Did FBM ask if the customer has paid a token amount?", opts:YN, exp:"Ask whether the customer has paid the token amount and got the agreement done.\nYes: \u201CHave you paid the token amount, and how much? And do you have the agreement letter (ATS/BBA/Provisional allotment letter)?\u201D\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Token amount Paid", q:"Did FBM ask how much token amount was paid?", opts:YN, exp:"Yes: \u201CHow much amount have you paid, sir?\u201D\nNo: Did not ask at all."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Agreement letter status", q:"Did FBM ask for the agreement letter (ATS / BBA / Provisional Allotment letter — whichever applies)?", opts:YN, exp:"Ask if the customer has received the ATS from the seller."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Location of the property / Project", q:"Did FBM confirm the property location, project name and pincode?", opts:YN, exp:"Yes: \u201CCould you please tell me the property location, project name and pincode?\u201D\nNo: Did not ask at all."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Ready to move / Under construction", q:"Did FBM confirm whether the property is ready to move or under construction?", opts:YN, exp:"Ask if the property is ready to move or under construction."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Market Value", q:"Did FBM confirm the market value?", opts:YN, exp:"Ask the market and agreement value.\nComplete: asked market value and agreement value (amount decided for registration).\nSemi: asked only one of the two.\nNo: asked neither."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Agreement value", q:"Did FBM confirm the agreement value (amount mentioned during property registry)?", opts:YN, exp:"Ask the agreement value — this value is declared during property registration."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Profession", q:"Did FBM ask the customer's profession (salaried or self-employed)?", opts:YN, exp:"Does the customer have a job or own a business, and for how long.\nComplete: \u201CAre you a salaried person or self-employed?\u201D\nSemi: asked profession but forgot tenure.\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Profession Tenure", q:"Did FBM confirm tenure in the company / business?", opts:YN, exp:"How many years in the current job or business."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Salaried Income: In-hand Salary", q:"Did FBM confirm the in-hand salary per month?", opts:YN, exp:"Salaried: in-hand take-home and gross salary per month.\nComplete: asked in-hand AND gross.\nSemi: asked only in-hand.\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Salaried Income: Gross Salary / month", q:"Did FBM confirm the gross salary per month?", opts:YN, exp:"Salaried: in-hand take-home and gross salary per month.\nComplete: asked in-hand AND gross.\nSemi: asked only in-hand.\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"SEP / SENP: ITR / Gross Annual Income", q:"Did FBM confirm the self-employed customer's gross annual income / income shown in ITR?", opts:YN, exp:"Self-employed: income shown in ITR or GST return.\nComplete: ITR and GST.\nSemi: only one.\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"New / Resale | Ready / Under construction", q:"Did FBM confirm whether the property is new or resale and ready-to-move or under construction?", opts:YN, exp:"Confirm DA / resale and ready-to-move / under construction.\nYes: \u201CIs this a direct allotment / new property or resale? And is it ready to move or under construction?\u201D\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Personal: Age", q:"Did FBM confirm the customer's age as per ID proof?", opts:YN, exp:"FBM needs age, current address pincode and marital status (also mobile & email if not in the lead).\nComplete: all three.\nSemi: any two.\nPartial: any one."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Personal: Current Address", q:"Did FBM confirm the customer's current address?", opts:YN, exp:"Ask where the customer is presently living — area name and pincode."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Personal: Marital Status", q:"Did FBM confirm the customer's marital status?", opts:YN, exp:"Ask if the customer is married or unmarried."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Obligation: Running loan / CC outstanding", q:"Did FBM check for any existing loan or credit card obligations?", opts:YN, exp:"Check for running loans and when they end.\nYes: \u201CDo you currently have any loan running or credit card outstanding?\u201D\nNo: Did not ask."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"CIBIL Score ask / Fetch", q:"Did FBM ask for or verify the customer's CIBIL score?", opts:YN, exp:"Ask or fetch the CIBIL score.\nYes: \u201CMay I know your CIBIL score, or let me check it for you?\u201D\nNo: Did not ask or verify."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Co-Applicant: Age (DOB)", q:"Did FBM confirm the co-applicant's age as per ID proof?", opts:YN, exp:"FBM needs to ask the date of birth as per Aadhaar & PAN card."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Co-Applicant: Current Address", q:"Did FBM confirm the co-applicant's current address?", opts:YN, exp:"Ask current city and pincode only — not the full address."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Co-Applicant: Marital Status", q:"Did FBM confirm the co-applicant's marital status?", opts:YN, exp:"Confirm whether the co-applicant is married or unmarried."},
+    {cat:"Profiling (Loan / Property / Persona)", mode:"F", param:"Co-Applicant: Running loan / CC outstanding", q:"Did FBM check for the co-applicant's existing loan or credit card obligations?", opts:YN, exp:"Check for running loans and when they end.\nYes: \u201CDo you currently have any loan running or credit card outstanding?\u201D\nNo: Did not ask."},
 
-    {cat:"Pitch", param:"TAT", q:"Did FBM explain the expected turnaround time for each stage?", opts:YN, exp:"Inform expected timelines.\nYes: shared a realistic TAT — explained the stages and the time each stage takes.\nNo: Did not explain timelines."},
+    {cat:"Call Etiquette", mode:"B", param:"Personalization", q:"Did FBM personalize the conversation using the customer's name?", opts:YN, exp:"Use the customer's name 3\u20134 times through the call.\nYes: \u201CRohit ji, as I can see\u2026\u201D / \u201CRohit ji, I would like to inform you\u2026\u201D\nNo: using \u201CSir\u201D throughout."},
+    {cat:"Call Etiquette", mode:"B", param:"Tone / Pace / Intonation / Confidence", q:"Did FBM maintain a professional tone, pace and confidence?", opts:YN, exp:"Maintain positive tone, pace and confidence.\nYes: professional communication.\nNo: poor tone or low confidence."},
+    {cat:"Call Etiquette", mode:"B", param:"Attentiveness / Rude", q:"Did FBM remain attentive and courteous throughout?", opts:YN, exp:"Remain attentive and polite.\nYes: listened actively and was respectful.\nNo: sounded rude or distracted."},
+    {cat:"Call Etiquette", mode:"B", param:"Apology / Empathy", q:"Did FBM show empathy and apologize wherever required?", opts:YN, exp:"Show empathy and apologize where required.\nYes: acknowledged customer concern and apologised.\nNo: no empathy shown."},
 
-    {cat:"Urgency", param:"Urgency Creation for documents", q:"Did FBM create enough urgency for the documents (e.g. delay may impact ROI / fees may increase / may miss exclusive lender offers)?", opts:YN, exp:"Create urgency for timely document submission and explain the impact of delays."},
+    {cat:"Pitch", mode:"B", param:"TAT", q:"Did FBM explain the expected turnaround time for each stage?", opts:YN, exp:"Inform expected timelines.\nYes: shared a realistic TAT — explained the stages and the time each stage takes.\nNo: Did not explain timelines."},
 
-    {cat:"Closing", param:"Call back time asked", q:"Did FBM ask the customer's preferred call-back time?", opts:YN, exp:"Ask for a preferred callback time.\nYes: confirmed a convenient time.\nNo: Did not ask."},
-    {cat:"Closing", param:"Further Assistance", q:"Did FBM check whether the customer needed any further assistance?", opts:YN, exp:"Check if the customer needs further assistance.\nYes: offered additional support.\nNo: Did not ask."},
-    {cat:"Closing", param:"Call closing", q:"Did FBM close the call professionally?", opts:YN, exp:"Close the call professionally.\nYes: thanked the customer and ended politely.\nNo: abrupt closure."},
+    {cat:"Urgency", mode:"B", param:"Urgency Creation for documents", q:"Did FBM create enough urgency for the documents (e.g. delay may impact ROI / fees may increase / may miss exclusive lender offers)?", opts:YN, exp:"Create urgency for timely document submission and explain the impact of delays."},
 
-    {cat:"Sangam", param:"Remarks updated", q:"Did FBM add elaborated remarks in Sangam?", opts:YN, exp:"Update remarks accurately in Sangam.\nYes: remarks updated.\nNo: remarks not updated."},
-    {cat:"Sangam", param:"Follow-ups set at preferred time", q:"Did FBM set the follow-up as per the customer's preferred time?", opts:YN, exp:"Set follow-up as per the customer's preferred time.\nYes: follow-up scheduled.\nNo: not set."},
-    {cat:"Sangam", param:"Document list shared", q:"Did FBM share the required document checklist (WhatsApp / email)?", opts:YN, exp:"Share the document checklist with the customer.\nYes: shared document list.\nNo: not shared."},
-    {cat:"Sangam", param:"Offer shared", q:"Did FBM share the available offers and lender options?", opts:YN, exp:"Share available offers and lender options.\nYes: offer shared.\nNo: offer not shared."},
+    {cat:"Closing", mode:"B", param:"Call back time asked", q:"Did FBM ask the customer's preferred call-back time?", opts:YN, exp:"Ask for a preferred callback time.\nYes: confirmed a convenient time.\nNo: Did not ask."},
+    {cat:"Closing", mode:"B", param:"Further Assistance", q:"Did FBM check whether the customer needed any further assistance?", opts:YN, exp:"Check if the customer needs further assistance.\nYes: offered additional support.\nNo: Did not ask."},
+    {cat:"Closing", mode:"B", param:"Call closing", q:"Did FBM close the call professionally?", opts:YN, exp:"Close the call professionally.\nYes: thanked the customer and ended politely.\nNo: abrupt closure."},
 
-    {cat:"Fatal", param:"False commitment / Abusive / Against COC", q:"Did FBM avoid false commitments, abusive language and any Code-of-Conduct violation?", opts:YN, exp:"No false commitment, abusive language or COC violation.\nYes: no violation.\nNo: fatal error observed."}
+    {cat:"Sangam", mode:"B", param:"Remarks updated", q:"Did FBM add elaborated remarks in Sangam?", opts:YN, exp:"Update remarks accurately in Sangam.\nYes: remarks updated.\nNo: remarks not updated."},
+    {cat:"Sangam", mode:"B", param:"Follow-ups set at preferred time", q:"Did FBM set the follow-up as per the customer's preferred time?", opts:YN, exp:"Set follow-up as per the customer's preferred time.\nYes: follow-up scheduled.\nNo: not set."},
+    {cat:"Sangam", mode:"B", param:"Document list shared", q:"Did FBM share the required document checklist (WhatsApp / email)?", opts:YN, exp:"Share the document checklist with the customer.\nYes: shared document list.\nNo: not shared."},
+    {cat:"Sangam", mode:"B", param:"Offer shared", q:"Did FBM share the available offers and lender options?", opts:YN, exp:"Share available offers and lender options.\nYes: offer shared.\nNo: offer not shared."},
+    {cat:"Sangam", mode:"FU", param:"Login — Customer consent taken for login", q:"Did FBM take consent for login over WhatsApp, email or call?", opts:YN, exp:"Before login, FBM needs to take customer consent after discussing all the charges and the process.\nYes: took consent.\nNo: did not take consent."},
+    {cat:"Sangam", mode:"FU", param:"Login — Login marked on time", q:"Did FBM mark the login status once consent was provided?", opts:YN, exp:"FBM needs to change the status and sub-status in Sangam as per the final conversation with the customer."},
+    {cat:"Sangam", mode:"FU", param:"Login — Communication sent to customer at every step", q:"Did FBM share regular updates with the customer within a 48-hour gap?", opts:YN, exp:"FBM needs to share the login confirmation email with the customer and take regular follow-ups within a 48-hour gap after login until disbursement."},
+
+    {cat:"Fatal", mode:"B", param:"False commitment / Abusive / Against COC", q:"Did FBM avoid false commitments, abusive language and any Code-of-Conduct violation?", opts:YN, exp:"No false commitment, abusive language or COC violation.\nYes: no violation.\nNo: fatal error observed."}
   ],
 
   B: [
-    {cat:"Pitch", param:"Ambak USP (New HL platform / 75+ lenders / Compare & Suggest-BRE / Zero service charges / Dedicated support / Live tracking)", q:"Did FBM explain Ambak's key benefits and value proposition?", opts:YNP, exp:"Handle process objections such as why this document is required, why it's taking so much time, why the sanction letter is delayed, etc.\nYes: acknowledge the customer's concern (\u201CI apologise for this issue and completely understand your situation, let me help you to the best of my ability\u201D).\nNo: ignored or failed to handle the objection."},
-    {cat:"Pitch", param:"Objection Handling: Process", q:"Did FBM handle process objections (why a document is required, why it's taking time, why the sanction letter is delayed, etc.)?", opts:YNP, exp:"Handle product objections such as why ROI is so high, why the loan amount is less, why can't I get 90% funding, etc.\nYes: acknowledge the customer's concern (\u201CI apologise for this issue and completely understand your situation, let me help you to the best of my ability\u201D).\nNo: ignored or failed to handle the objection."},
-    {cat:"Pitch", param:"Objection Handling: Product", q:"Did FBM handle product objections (why ROI is high, why loan amount is less, why not 90% funding, etc.)?", opts:YNP, exp:"Handle behavioural objections such as being condescending with the customer, showing a negative attitude, reacting negatively when the customer points out an FBM mistake, etc.\nYes: acknowledge the customer's concern (\u201CI apologise for this issue and completely understand your situation, let me help you to the best of my ability\u201D).\nNo: ignored or failed to handle the objection."},
-    {cat:"Pitch", param:"Objection Handling: Behaviour", q:"Did FBM handle behavioural objections (being condescending, negative attitude, reacting badly when the customer points out a mistake, etc.)?", opts:YNP, exp:"Handle behavioural objections such as being condescending with the customer, showing a negative attitude, reacting negatively when the customer points out an FBM mistake, etc.\nYes: acknowledge the customer's concern (\u201CI apologise for this issue and completely understand your situation, let me help you to the best of my ability\u201D).\nNo: ignored or failed to handle the objection."},
-    {cat:"Pitch", param:"Further Process Explain (Application / CAM / FI / PD / Legal / Technical / Sanction / Disbursement)", q:"Did FBM explain the complete loan process from application to disbursement?", opts:YNP, exp:"Explain to the customer what happens once the case is logged in with the bank."},
+    {cat:"Pitch", mode:"F", param:"Ambak USP (New HL platform / 75+ lenders / Compare & Suggest-BRE / Zero service charges / Dedicated support / Live tracking)", q:"Did FBM explain Ambak's key benefits and value proposition?", opts:YNP, exp:"Explain Ambak's key benefits and value proposition.\nYes: all 6 USPs informed.\nNo: not covered at all.\nPartial: covered a few (list what was missed in the comment)."},
+    {cat:"Pitch", mode:"B", param:"Objection Handling: Process", q:"Did FBM handle process objections (why a document is required, why it's taking time, why the sanction letter is delayed, etc.)?", opts:YNP, exp:"Handle process objections such as why this document is required, why it's taking so much time, why the sanction letter is delayed, etc.\nYes: covered all aspects of the objection — acknowledge the concern (\u201CI apologise for this issue and completely understand your situation, let me help you to the best of my ability\u201D).\nNo: did not handle the objection at all.\nPartial: handled partially but not well (mention in the comment what could have been done)."},
+    {cat:"Pitch", mode:"B", param:"Objection Handling: Product", q:"Did FBM handle product objections (why ROI is high, why loan amount is less, why not 90% funding, etc.)?", opts:YNP, exp:"Handle product objections such as why ROI is so high, why the loan amount is less, why can't I get 90% funding, etc.\nYes: covered all aspects of the objection — acknowledged the concern.\nNo: did not handle the objection at all.\nPartial: handled partially but not well (mention in the comment what could have been done)."},
+    {cat:"Pitch", mode:"B", param:"Objection Handling: Behaviour", q:"Did FBM handle behavioural objections (being condescending, negative attitude, reacting badly when the customer points out a mistake, etc.)?", opts:YNP, exp:"Handle behavioural objections such as being condescending with the customer, showing a negative attitude, reacting negatively when the customer points out an FBM mistake, etc.\nYes: covered all aspects of the objection — acknowledged the concern.\nNo: did not handle the objection at all.\nPartial: handled partially but not well (mention in the comment what could have been done)."},
+    {cat:"Pitch", mode:"B", param:"Further Process Explain (Application / CAM / FI / PD / Legal / Technical / Sanction / Disbursement)", q:"Did FBM explain the complete loan process from application to disbursement?", opts:YNP, exp:"Explain to the customer what happens once the case is logged in with the bank.\nYes: educated the customer about all stages from form login to disbursal.\nNo: not discussed at all.\nPartial: discussed only a few (list what was missed in the comment)."},
 
-    {cat:"Documents", param:"Property", q:"Did FBM educate the customer on all property-related documents as per the DRE in Sangam?", opts:YNP, exp:"Customer-persona-wise document education / awareness (based on Sangam update)."},
-    {cat:"Documents", param:"Income", q:"Did FBM educate the customer on all income-related documents as per the DRE in Sangam?", opts:YNP, exp:"Customer-persona-wise document education / awareness (based on Sangam update)."},
-    {cat:"Documents", param:"KYC", q:"Did FBM educate the customer on all KYC-related documents as per the DRE in Sangam?", opts:YNP, exp:"Customer-persona-wise document education / awareness (based on Sangam update)."},
-    {cat:"Documents", param:"Objection handling — why docs are required", q:"Did FBM explain why the respective documents are required?", opts:YNP, exp:"Explain the complete process from application to disbursement.\nComplete: explained the key stages.\nNo: did not explain the process."},
-    {cat:"Documents", param:"Objection handling — document source", q:"Did FBM help the customer understand the source / how to access their documents to share?", opts:YNP, exp:"Explain the complete process from application to disbursement.\nComplete: explained the key stages.\nNo: did not explain the process."}
+    {cat:"Sangam", mode:"B", param:"Login — All charges explained", q:"Did FBM explain all charges — Login Charges, PF, MODT, etc.?", opts:YNP, exp:"Before login, FBM needs to proactively inform the customer about all applicable charges, such as Login fee, PF, MODT, Legal & Technical fee, Stamp Duty etc.\nYes: all charges discussed.\nNo: not at all discussed.\nPartial: some charges discussed."},
+
+    {cat:"Documents", mode:"B", param:"Property", q:"Did FBM educate the customer on all property-related documents as per the DRE in Sangam?", opts:YNP, exp:"Customer-persona-wise document education / awareness (based on Sangam update).\nYes: guided the customer about all required docs.\nNo: did not discuss at all.\nPartial: discussed only a few."},
+    {cat:"Documents", mode:"B", param:"Income", q:"Did FBM educate the customer on all income-related documents as per the DRE in Sangam?", opts:YNP, exp:"Customer-persona-wise document education / awareness (based on Sangam update).\nYes: guided the customer about all required docs.\nNo: did not discuss at all.\nPartial: discussed only a few."},
+    {cat:"Documents", mode:"B", param:"KYC", q:"Did FBM educate the customer on all KYC-related documents as per the DRE in Sangam?", opts:YNP, exp:"Customer-persona-wise document education / awareness (based on Sangam update).\nYes: guided the customer about all required docs.\nNo: did not discuss at all.\nPartial: discussed only a few."},
+    {cat:"Documents", mode:"B", param:"Objection handling — why docs are required", q:"Did FBM explain why the respective documents are required?", opts:YNP, exp:"Yes: informed the reason why all these documents are required and educated the customer.\nNo: did not or could not explain why these docs are required.\nPartial: explained partially but not completely (mention in the comment what else could be informed)."},
+    {cat:"Documents", mode:"B", param:"Objection handling — document source", q:"Did FBM help the customer understand the source / how to access their documents to share?", opts:YNP, exp:"Yes: helped the customer understand the source of all the required documents.\nNo: did not discuss or educate about the source of documents.\nPartial: explained partially but not completely (mention in the comment what else could be informed)."}
   ]
 };
 
-/* ---------- Render ---------- */
+/* ---------- State ---------- */
 const responses = {};       // id -> value
 const notes = {};           // id -> text
+let callType = 'Fresh';     // 'Fresh' | 'Follow up'
 const formArea = document.getElementById('formArea');
 
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+/* Does this item apply to the currently selected call type? */
+function applies(it){
+  if(it.mode==='B') return true;
+  return callType==='Fresh' ? it.mode==='F' : it.mode==='FU';
+}
+/* IDs of items visible under the current call type, per part */
+function visibleItems(part){
+  return DATA[part].map((it,i)=>({it,id:part+'_'+i})).filter(x=>applies(x.it));
+}
+
+function modeTag(it){
+  if(it.mode==='F')  return '<span class="mode-tag f">Fresh</span>';
+  if(it.mode==='FU') return '<span class="mode-tag fu">Follow up</span>';
+  return '';
+}
+
 function buildPart(part){
-  const items = DATA[part];
+  const items = visibleItems(part);
   const frag = document.createElement('div');
   let lastCat = null, catWrap=null, catIndex=0;
 
-  items.forEach((it,i)=>{
-    const id = part + '_' + i;
+  items.forEach(({it,id})=>{
     if(it.cat !== lastCat){
       catIndex++;
       lastCat = it.cat;
-      const count = items.filter(x=>x.cat===it.cat).length;
+      const count = items.filter(x=>x.it.cat===it.cat).length;
       catWrap = document.createElement('section');
       catWrap.className='cat';
       catWrap.innerHTML =
@@ -472,7 +524,7 @@ function buildPart(part){
     row.id='row_'+id;
     row.innerHTML =
       `<div class="row-top">
-         <div class="param">${esc(it.param)} ${tip}</div>
+         <div class="param">${esc(it.param)} ${tip} ${modeTag(it)}</div>
        </div>
        <div class="qtext">${esc(it.q)}</div>
        <div class="opts">${optsHtml}</div>
@@ -482,12 +534,20 @@ function buildPart(part){
        </div>`;
     catWrap.appendChild(row);
   });
+
+  if(!items.length){
+    const empty=document.createElement('p');
+    empty.style.cssText='text-align:center;color:var(--muted);padding:30px 0';
+    empty.textContent='No parameters apply to this call type in this part.';
+    frag.appendChild(empty);
+  }
   return frag;
 }
 
 function pick(id,val){
   responses[id]=val;
-  document.getElementById('row_'+id).classList.add('answered');
+  const row=document.getElementById('row_'+id);
+  if(row) row.classList.add('answered');
   updateScore();
 }
 function toggleNote(id){
@@ -502,9 +562,8 @@ function showPart(part){
   document.querySelectorAll('.tab').forEach(t=>{
     t.setAttribute('aria-selected', t.dataset.part===part ? 'true':'false');
   });
-  // restore selections
-  DATA[part].forEach((it,i)=>{
-    const id=part+'_'+i;
+  // restore selections for visible items
+  visibleItems(part).forEach(({id})=>{
     if(responses[id]){
       const el=document.querySelector(`input[name="${id}"][value="${responses[id]}"]`);
       if(el){el.checked=true;document.getElementById('row_'+id).classList.add('answered');}
@@ -517,10 +576,29 @@ function showPart(part){
   updateScore();
 }
 
+/* ---------- Call type switching ---------- */
+function setCallType(type){
+  if(type===callType) return;
+  callType=type;
+  document.getElementById('ctFresh').setAttribute('aria-pressed', type==='Fresh');
+  document.getElementById('ctFollow').setAttribute('aria-pressed', type==='Follow up');
+  updateHint();
+  showPart(currentPart);   // re-render with the new filter (answers are kept)
+}
+function updateHint(){
+  const a=visibleItems('A').length, b=visibleItems('B').length;
+  document.getElementById('ctHint').textContent =
+    `Showing ${a+b} parameters for a ${callType} call (Part A: ${a} · Part B: ${b}). Only these are counted and submitted.`;
+}
+
 function updateScore(){
-  const total = DATA.A.length + DATA.B.length;
+  const visA=visibleItems('A'), visB=visibleItems('B');
+  const total = visA.length + visB.length;
   let answered=0, t={Yes:0,No:0,Partial:0,NA:0};
-  Object.values(responses).forEach(v=>{answered++; t[v]=(t[v]||0)+1;});
+  [...visA,...visB].forEach(({id})=>{
+    const v=responses[id];
+    if(v){answered++; t[v]=(t[v]||0)+1;}
+  });
   document.getElementById('t_yes').textContent=t.Yes;
   document.getElementById('t_no').textContent=t.No;
   document.getElementById('t_partial').textContent=t.Partial;
@@ -528,13 +606,10 @@ function updateScore(){
   const pct = total? Math.round(answered/total*100):0;
   document.getElementById('ringPct').textContent=pct+'%';
   const C=2*Math.PI*19;
-  document.getElementById('ringFill').setAttribute('stroke-dashoffset', C*(1-answered/total));
+  document.getElementById('ringFill').setAttribute('stroke-dashoffset', total?C*(1-answered/total):C);
 
-  // per-part progress pills
-  const aDone=DATA.A.filter((_,i)=>responses['A_'+i]).length;
-  const bDone=DATA.B.filter((_,i)=>responses['B_'+i]).length;
-  document.getElementById('pillA').textContent=aDone+'/'+DATA.A.length;
-  document.getElementById('pillB').textContent=bDone+'/'+DATA.B.length;
+  document.getElementById('pillA').textContent=visA.filter(({id})=>responses[id]).length+'/'+visA.length;
+  document.getElementById('pillB').textContent=visB.filter(({id})=>responses[id]).length+'/'+visB.length;
 }
 
 /* ---------- CSV export ---------- */
@@ -545,16 +620,18 @@ function exportCSV(){
     ['Agent Name', document.getElementById('cd_agent').value],
     ['Agent Email', selEmail(document.getElementById('cd_agent'))],
     ['Lead ID', document.getElementById('cd_lead').value],
+    ['Call Type', callType],
     ['Call Date & Time', document.getElementById('cd_calldt').value],
     ['Audit Date', document.getElementById('cd_auditdate').value],
     ['Call Duration', document.getElementById('cd_duration').value]
   ];
   const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
-  let rows=[['Section','Category','Parameter','Audit question','Response','Remark']];
+  let rows=[['Section','Category','Parameter','Call type','Audit question','Response','Remark']];
   ['A','B'].forEach(p=>{
-    DATA[p].forEach((it,i)=>{
-      const id=p+'_'+i;
-      rows.push(['Part '+p, it.cat, it.param, it.q, responses[id]||'', notes[id]||'']);
+    visibleItems(p).forEach(({it,id})=>{
+      rows.push(['Part '+p, it.cat, it.param,
+        it.mode==='B'?'Fresh/Follow up':(it.mode==='F'?'Fresh':'Follow up'),
+        it.q, responses[id]||'', notes[id]||'']);
     });
   });
   let csv=meta.map(m=>m.map(q).join(',')).join('\n')+'\n\n'+rows.map(r=>r.map(q).join(',')).join('\n');
@@ -575,31 +652,36 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbza0Vi3F-wGW6
 
 function buildSubmission(){
   const qa=document.getElementById('cd_qa'),ag=document.getElementById('cd_agent');
+  const visA=visibleItems('A'), visB=visibleItems('B');
   const t={Yes:0,No:0,Partial:0,NA:0};
-  Object.values(responses).forEach(v=>{t[v]=(t[v]||0)+1;});
-  const total=DATA.A.length+DATA.B.length, answered=Object.keys(responses).length;
+  let answered=0;
+  [...visA,...visB].forEach(({id})=>{
+    const v=responses[id]; if(v){answered++;t[v]=(t[v]||0)+1;}
+  });
+  const total=visA.length+visB.length;
   const calldt=(document.getElementById('cd_calldt').value||'').replace('T',' ');
-  // Leading columns — kept exactly as before, in order
+  // Leading columns — kept in order
   const meta=[
     ['QA / Manager Name', qa.value],
     ['QA / Manager Email (Submitted by)', selEmail(qa)],
     ['Agent Name', ag.value],
     ['Agent Email', selEmail(ag)],
     ['Lead ID', document.getElementById('cd_lead').value],
+    ['Call Type', callType],
     ['Call Date & Time', calldt],
     ['Audit Date', document.getElementById('cd_auditdate').value],
     ['Call Duration', document.getElementById('cd_duration').value],
     ['Yes', t.Yes], ['No', t.No], ['Partial', t.Partial], ['NA', t.NA],
     ['Answered', answered], ['Total', total]
   ];
-  // One entry per parameter (Part A then Part B) — drives the 4-row header + value + remark
+  // Only parameters that apply to the selected call type
   const items=[];
-  ['A','B'].forEach(p=>DATA[p].forEach((it,i)=>{
-    const id=p+'_'+i;
+  ['A','B'].forEach(p=>visibleItems(p).forEach(({it,id})=>{
     items.push({part:'Part '+p, cat:it.cat, param:it.param, question:it.q,
+      callType:it.mode==='B'?'Fresh/Follow up':(it.mode==='F'?'Fresh':'Follow up'),
       response:responses[id]||'', remark:notes[id]||''});
   }));
-  return {meta, items};
+  return {meta, items, callType};
 }
 
 function toast(msg,ok){
@@ -637,9 +719,13 @@ function openReview(){
   const qa=document.getElementById('cd_qa'), ag=document.getElementById('cd_agent');
   if(!qa.value||!ag.value){toast('Select QA and Agent before submitting.',false);return;}
 
+  const visA=visibleItems('A'), visB=visibleItems('B');
   const t={Yes:0,No:0,Partial:0,NA:0};
-  Object.values(responses).forEach(v=>{t[v]=(t[v]||0)+1;});
-  const total=DATA.A.length+DATA.B.length, answered=Object.keys(responses).length;
+  let answered=0;
+  [...visA,...visB].forEach(({id})=>{
+    const v=responses[id]; if(v){answered++;t[v]=(t[v]||0)+1;}
+  });
+  const total=visA.length+visB.length;
 
   const det=[
     ['QA / Manager', qa.value],
@@ -647,10 +733,11 @@ function openReview(){
     ['Agent', ag.value],
     ['Agent Email', selEmail(ag)],
     ['Lead ID', val('cd_lead')],
+    ['Call Type', callType],
     ['Call Date & Time', (val('cd_calldt')||'').replace('T',' ')],
     ['Audit Date', val('cd_auditdate')],
     ['Call Duration', val('cd_duration')]
-  ].map(d=>`<div class="it"><span class="k">${esc(d[0])}</span><span class="v">${esc(d[1]||'—')}</span></div>`).join('');
+  ].map(d=>`<div class="it"><span class="k">${esc(d[0])}</span><span class="v">${esc(String(d[1]||'—'))}</span></div>`).join('');
 
   const chips=`<div class="sum-tally">
     <span class="chip yes">Yes <b>${t.Yes}</b></span>
@@ -666,8 +753,8 @@ function openReview(){
   let list='';
   ['A','B'].forEach(p=>{
     list+=`<div class="sum-sec">Part ${p}</div>`;
-    DATA[p].forEach((it,i)=>{
-      const id=p+'_'+i, r=responses[id], rk=r?r.toLowerCase():'none';
+    visibleItems(p).forEach(({it,id})=>{
+      const r=responses[id], rk=r?r.toLowerCase():'none';
       const note=notes[id]?`<small>📝 ${esc(notes[id])}</small>`:'';
       list+=`<div class="sum-row"><span class="p">${esc(it.param)}${note}</span>
         <span class="badge ${rk}">${r||'—'}</span></div>`;
@@ -780,6 +867,8 @@ document.getElementById('submitBtn').addEventListener('click',openReview);
 document.getElementById('reviewConfirm').addEventListener('click',submitToGoogle);
 document.getElementById('reviewBack').addEventListener('click',closeReview);
 document.getElementById('refreshBtn').addEventListener('click',refreshForm);
+document.getElementById('ctFresh').addEventListener('click',()=>setCallType('Fresh'));
+document.getElementById('ctFollow').addEventListener('click',()=>setCallType('Follow up'));
 document.getElementById('reviewOverlay').addEventListener('click',e=>{
   if(e.target.id==='reviewOverlay') closeReview();
 });
@@ -791,6 +880,7 @@ document.addEventListener('click',e=>{
   if(!e.target.classList.contains('info'))
     document.querySelectorAll('.info.open').forEach(x=>x.classList.remove('open'));
 });
+updateHint();
 showPart('A');
 </script>
 </body>

@@ -318,6 +318,12 @@
         <input type="date" id="cd_auditdate"></label>
       <label>Call Duration
         <input type="text" id="cd_duration" placeholder="e.g. 5:32 or 332 sec"></label>
+      <label>Call Type
+        <select id="cd_calltype">
+          <option value="">— select call type —</option>
+          <option value="Calibration Call">Calibration Call</option>
+          <option value="Non-Calibration Call">Non-Calibration Call</option>
+        </select></label>
     </div>
   </section>
 
@@ -623,7 +629,8 @@ function exportCSV(){
     ['Call Type', callType],
     ['Call Date & Time', document.getElementById('cd_calldt').value],
     ['Audit Date', document.getElementById('cd_auditdate').value],
-    ['Call Duration', document.getElementById('cd_duration').value]
+    ['Call Duration', document.getElementById('cd_duration').value],
+    ['Calibration Type', document.getElementById('cd_calltype').value]
   ];
   const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
   let rows=[['Section','Category','Parameter','Call type','Audit question','Response','Remark']];
@@ -671,6 +678,7 @@ function buildSubmission(){
     ['Call Date & Time', calldt],
     ['Audit Date', document.getElementById('cd_auditdate').value],
     ['Call Duration', document.getElementById('cd_duration').value],
+    ['Calibration Type', document.getElementById('cd_calltype').value],
     ['Yes', t.Yes], ['No', t.No], ['Partial', t.Partial], ['NA', t.NA],
     ['Answered', answered], ['Total', total]
   ];
@@ -736,7 +744,8 @@ function openReview(){
     ['Call Type', callType],
     ['Call Date & Time', (val('cd_calldt')||'').replace('T',' ')],
     ['Audit Date', val('cd_auditdate')],
-    ['Call Duration', val('cd_duration')]
+    ['Call Duration', val('cd_duration')],
+    ['Call Type (Calibration)', val('cd_calltype')]
   ].map(d=>`<div class="it"><span class="k">${esc(d[0])}</span><span class="v">${esc(String(d[1]||'—'))}</span></div>`).join('');
 
   const chips=`<div class="sum-tally">
